@@ -6,3 +6,8 @@ hh-cache
 hh-artifacts
 .env
 dist
+.idea
+.vscode
+.wake
+cache
+
