@@ -9,16 +9,19 @@ import "./IEri.sol";
 contract Originality {
 
     using Strings for uint256;
-    using Strings for bytes32;
 
-    address immutable owner;
+    address public immutable owner; //to be made private
     uint256 immutable manufacturerId;
 
-    mapping(string => IEri.Item) public items;
-    mapping(string => IEri.Item) public changeOfOwnershipCode;
+    mapping(string => IEri.Item) public items; //to be made private
+    mapping(bytes32 => IEri.Item) public changeOfOwnershipCode; //to be made private
 
     event ItemCreated(string indexed itemId, address indexed owner);
-    event ManufacturerCode(string indexed manufacturerCode, string indexed itemId);
+    event ManufacturerCode(
+        string indexed manufacturerCode,
+        string indexed itemId,
+        bytes32 hashKey
+    );
     event OwnershipClaimed(address indexed newOwner, string indexed itemId);
 
     modifier addressZeroCheck(address _user) {
@@ -26,9 +29,15 @@ contract Originality {
         _;
     }
 
-    modifier onlyOwner() {
-        if (msg.sender != owner) revert EriErrors.ONLY_OWNER(msg.sender);
+    modifier onlyOwner(address _caller) {
+        if (_caller != owner) revert EriErrors.ONLY_OWNER(_caller);
         _;
+    }
+
+    //Not complete, will add manufacturerID and others
+    constructor (address _owner, uint256 _manufacturerId) {
+        owner = _owner;
+        manufacturerId = _manufacturerId;
     }
 
     // manufacturer contract will be a factory contract where a new contract will be ccreated at the registration of each manufacturer
@@ -38,28 +47,37 @@ contract Originality {
     // only the manufacturer should be able to create items but, again,
     // with this here, there's no way to verify who the manufacturer is
     function ownerCreatedItem(
+        address _caller,
         string memory itemId,
         string memory name,
         string[] memory metadata
-    ) external addressZeroCheck(msg.sender) {
+    ) external addressZeroCheck(msg.sender) onlyOwner(_caller) {
+
         IEri.Item storage item = items[itemId];
 
         item.itemId = itemId;
         item.name = name;
-        item.owner = msg.sender;
+        item.owner = owner;
         item.metadata = metadata;
 
-        emit ItemCreated(itemId, msg.sender);
+        emit ItemCreated(itemId, _caller);
     }
 
-    function getItem(string memory itemId) external view returns (IEri.Item memory) {
+    function getItem(string memory itemId)
+    external
+    view
+    returns (IEri.Item memory)
+    {
         return items[itemId];
     }
 
-    function manufacturerGeneratesCode(string memory itemId) external returns (string memory){
-
-        bytes32 ownershipHash = keccak256(abi.encode(itemId, block.timestamp, msg.sender));
-
+    function manufacturerGeneratesCode(string memory itemId)
+    external
+    returns (string memory)
+    {
+        bytes32 ownershipHash = keccak256(
+            abi.encode(itemId, block.timestamp, msg.sender)
+        );
 
         // convert bytes32 to uint256 first to access the toHexString function
         string memory shortHash = uint256(ownershipHash).toHexString();
@@ -72,31 +90,54 @@ contract Originality {
             shortenedHash[i] = hashBytes[i + 2];
         }
 
-        string memory manufacturerCode =  string(abi.encodePacked(
-            manufacturerId.toString(),
-            "-",
-            shortenedHash
-        ));
+        string memory manufacturerCode = string(
+            abi.encodePacked(manufacturerId.toString(), "-", shortenedHash)
+        );
+
+        bytes32 hashKey = keccak256(abi.encode(shortenedHash));
 
         //manufacturer generates the code for use to claim ownership for the first time
-        changeOfOwnershipCode[manufacturerCode] = items[itemId];
+        changeOfOwnershipCode[hashKey] = items[itemId];
 
-        emit ManufacturerCode(manufacturerCode, itemId);
+        emit ManufacturerCode(manufacturerCode, itemId, hashKey); //this is what will be in the item pack and not emitted as event
 
-        return manufacturerCode;
+        return manufacturerCode; //this will also be removed in production
     }
 
     // before the ownershipCode is passed into this function, the first digit before the dash is stripped away,
     // it's the manufacturer code to access this smart contract from the factory contract
-    function userClaimOwnershipForTheFirstTime(string memory ownershipCode) external addressZeroCheck(msg.sender) {
+    function userClaimOwnershipForTheFirstTime(address _caller, string memory ownershipCode)
+    external
+    addressZeroCheck(msg.sender)
+    {
         // this just makes anyone who's able to provide the ownership code
         // this might poses a security risk
 
-        IEri.Item storage item = changeOfOwnershipCode[ownershipCode];
+        bytes32 hashedCode = keccak256(abi.encode(ownershipCode));
 
-        item.owner = msg.sender;
+        IEri.Item memory item = changeOfOwnershipCode[hashedCode];
+
+        item.owner = _caller;
+
+        items[item.itemId] = item;
+
+        delete changeOfOwnershipCode[hashedCode];
 
         emit OwnershipClaimed(item.owner, item.itemId);
-
     }
+
+
+    //     address public verifier; // Set in constructor
+
+    // function userClaimOwnershipForTheFirstTime(
+    //     string memory ownershipCode,
+    //     bytes memory signature // Signed by verifier
+    // ) external addressZeroCheck(msg.sender) {
+    //     // Verify the signature
+    //     bytes32 hash = keccak256(abi.encodePacked(msg.sender, ownershipCode));
+    //     address signer = ECDSA.recover(ECDSA.toEthSignedMessageHash(hash), signature);
+    //     require(signer == verifier, "Invalid signature");
+
+    //     _processOwnershipClaim(ownershipCode);
+    // }
 }
