@@ -16,7 +16,8 @@ contract CounterTest is Test {
         counter.increment();
         assertEq(counter.number(), 1);
     }
-
+    //to test a specific function from all
+    //TODO: forge test --match-path test/Counter.t.sol --match-test testFuzz_SetNumber -vvvv
     function testFuzz_SetNumber(uint256 x) public {
         counter.setNumber(x);
         assertEq(counter.number(), x);
