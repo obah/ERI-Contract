@@ -8,16 +8,17 @@ library OwnershipLib {
 
 
     function _userRegisters(
-        mapping(address => IEri.UserProfile) storage users,
+        mapping(string => IEri.UserProfile) storage users,
         address userAddress,
         string memory username
     ) external  {
 
-        if (users[userAddress].isRegistered) {
+        if (users[username].isRegistered) {
             revert EriErrors.ALREADY_REGISTERED(userAddress);
         }
 
-        IEri.UserProfile storage user = users[userAddress];
+        IEri.UserProfile storage user = users[username];
+
         user.userAddress = userAddress;
         user.username = username;
         user.isRegistered = true;

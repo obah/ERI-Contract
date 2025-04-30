@@ -7,7 +7,7 @@ interface IENSResolver {
 }
 
 // Basename Registry Contract
-contract BasenameRegistry {
+contract ERI_ENS {
     // ENS Resolver address on Base (replace with actual Base resolver address)
     address public constant ENS_RESOLVER = 0x6533C94869D28fAA8dF77cc63f9e2b2D6Cf77eBA; // Update with Base's resolver
     IENSResolver private resolver = IENSResolver(ENS_RESOLVER);

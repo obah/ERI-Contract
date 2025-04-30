@@ -1,30 +1,42 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.29;
 
-import "contracts/Originality.sol";
+import "./Originality.sol";
 import "contracts/IEri.sol";
 
 contract OriginalityFactory {
 
     uint256 contractCounts;
+    address immutable ownership;
 
-    mapping (uint256 => IEri.Manufacturer) public manufacturer;
+    mapping (uint256 manufacturerID => IEri.Manufacturer) public manufacturers;
 
     event ManufacturerRegistered(
         address indexed ownerOfContract,
         address indexed contractAddress
     );
 
-    function manufacturerRegisters(string memory name) external {
+
+    modifier addressZeroCheck(address _user) {
+        if (_user == address(0)) revert EriErrors.ONLY_OWNER(_user);
+        _;
+    }
+
+    constructor (address ownershipAdd) {
+        ownership = ownershipAdd;
+    }
+
+
+    function manufacturerRegisters(string memory name) external addressZeroCheck(msg.sender) { // this will be done on-chain
 
         contractCounts += 1;
         address _owner = msg.sender;
 
         address manufacturerContract = address(
-            new Originality(_owner, contractCounts)
+            new Originality(ownership, _owner, contractCounts)
         );
 
-        IEri.Manufacturer storage newManufacturer = manufacturer[contractCounts];
+        IEri.Manufacturer storage newManufacturer = manufacturers[contractCounts];
 
         newManufacturer.manufacturerContract = manufacturerContract;
         newManufacturer.manufacturerAddress = _owner;
@@ -36,7 +48,7 @@ contract OriginalityFactory {
 
     function getContract(uint256 manufacturerId) public  view returns (address) {
 
-        return manufacturer[manufacturerId].manufacturerContract;
+        return manufacturers[manufacturerId].manufacturerContract;
     }
 
     function manufacturerCreateItem(
@@ -84,5 +96,7 @@ contract OriginalityFactory {
         originality.userClaimOwnershipForTheFirstTime(msg.sender, ownershipCode);
 
     }
+
+
 
 }

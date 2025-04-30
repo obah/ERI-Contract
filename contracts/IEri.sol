@@ -21,6 +21,7 @@ interface IEri {
         address owner;
         string itemId; // something very unique like the IMEI of a phone
         string name;
+        uint256 manufacturerId;
         string[] metadata;
     }
 
@@ -40,7 +41,7 @@ interface IEri {
     external
     returns (string memory);
 
-    function userClaimOwnershipForTheFirstTime(address _caller, string memory ownershipCode)
-    external;
+    function userClaimOwnershipForTheFirstTime(address _caller, string memory ownershipCode) external;
 
+    function setItemInOwnership(address user, IEri.Item memory item ) external;
 }
