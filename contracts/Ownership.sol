@@ -12,6 +12,8 @@ contract Ownership {
 
     mapping(string => IEri.UserProfile) public users;
 
+    mapping(string itemId => address owner) public owners;
+
     mapping(address => mapping(string => IEri.Item)) public ownedItems;
 
     mapping(bytes32 => mapping(address => IEri.Item)) public tempOwners;
@@ -74,7 +76,11 @@ contract Ownership {
     external
     addressZeroCheck(user)
     {
-        ownedItems[user][item.itemId] = item;
+
+        string memory id = item.itemId;
+        ownedItems[user][id] = item;
+
+        owners[id] = user;
 
         emit ItemCreated(item.itemId, user);
     }
@@ -117,17 +123,38 @@ contract Ownership {
 
         string memory id = _item.itemId;
 
-        if (_item.owner == address(0)) {
-            revert EriErrors.UNATHORIZED(msg.sender);
+        if (oldOwner == address(0)) {
+            revert EriErrors.UNAUTHORIZED(msg.sender);
         }
 
         _item.owner = msg.sender;
 
         ownedItems[msg.sender][id] = _item; //save the item with the new owner key
 
+        owners[id] = msg.sender;
+
         delete ownedItems[oldOwner][id]; //delete the item from the old owner mapping
         delete tempOwners[ownershipHash][msg.sender]; //delete the item from the ownership code
 
         emit OwnershipClaimed(msg.sender, oldOwner);
+    }
+
+    //this function is meant to verify the owner of an item
+    //it will return the item and all of it's information, including the owner
+    function getItem(string memory itemId) external view returns (IEri.Item memory _item) {
+
+        address user = owners[itemId];
+
+        if (user == address(0)) {
+            revert EriErrors.ITEM_DOESNT_EXIST(itemId);
+        }
+
+        return ownedItems[user][itemId];
+    }
+
+    function isOwner(address user, string memory itemId) external view returns (bool) {
+        IEri.Item memory _item = ownedItems[user][itemId];
+
+        return _item.owner == user;
     }
 }

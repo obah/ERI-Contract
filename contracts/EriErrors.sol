@@ -6,6 +6,7 @@ contract EriErrors {
     error ALREADY_REGISTERED(address);
     error ADDRESS_ZERO(address);
     error CODE_ALREADY_GENERATED();
-    error UNATHORIZED(address);
+    error UNAUTHORIZED(address);
+    error ITEM_DOESNT_EXIST(string);
 
 }
