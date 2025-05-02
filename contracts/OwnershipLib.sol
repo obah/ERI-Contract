@@ -6,16 +6,11 @@ import "./IEri.sol";
 
 library OwnershipLib {
 
-
     function _userRegisters(
         mapping(string => IEri.UserProfile) storage users,
         address userAddress,
         string memory username
-    ) external  {
-
-        if (users[username].isRegistered) {
-            revert EriErrors.ALREADY_REGISTERED(userAddress);
-        }
+    ) external {
 
         IEri.UserProfile storage user = users[username];
 
