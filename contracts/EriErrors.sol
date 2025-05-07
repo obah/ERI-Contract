@@ -8,5 +8,7 @@ contract EriErrors {
     error CODE_ALREADY_GENERATED();
     error UNAUTHORIZED(address);
     error ITEM_DOESNT_EXIST(string);
-
+    error CONTRACT_DOEST_NOT_EXIST();
+    error NANE_ALREADY_EXIST(string);
+    error INVALID_SIGNATURE();
 }

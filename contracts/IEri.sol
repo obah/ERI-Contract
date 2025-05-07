@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "./Originality.sol";
+import "./Originality.sol";
+
 interface IEri {
 
-    struct UserProfile {
+    struct UserProfile { // I will create a different smart contract to manage the user profile
         address userAddress;
         string username;
         bool isRegistered;
@@ -11,10 +14,18 @@ interface IEri {
     }
 
     struct Manufacturer {
+        string name;
         address manufacturerContract;
         address manufacturerAddress;
-        uint256 manufacturerId;
+    }
+
+    struct Certificate {
         string name;
+        string uniqueId;
+        string serial;
+        uint256 date;
+        address owner;
+        string[] metadata;
     }
 
     struct Item {
@@ -44,4 +55,6 @@ interface IEri {
     function userClaimOwnershipForTheFirstTime(address _caller, string memory ownershipCode) external;
 
     function setItemInOwnership(address user, IEri.Item memory item ) external;
+
+    function getOwner() external view returns (address);
 }
