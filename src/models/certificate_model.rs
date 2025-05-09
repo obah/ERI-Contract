@@ -21,6 +21,7 @@ pub struct Certificate {
 
 // EIP-712 implementation
 impl Eip712 for Certificate {
+
     type Error = Eip712Error;
 
     fn domain_separator(&self) -> Result<[u8; 32], Self::Error> {
@@ -41,28 +42,30 @@ impl Eip712 for Certificate {
         ]);
         Ok(keccak256(&encoded))
     }
-
     fn domain(&self) -> Result<EIP712Domain, Self::Error> {
+        let factory_address: Address = env::var("CONTRACT_ADDRESS")
+            .expect("CONTRACT ADDRESS NOT SET")
+            .parse()
+            .expect("Invalid contract address");
+
         let chain_id = env::var("CHAIN_ID").unwrap().parse::<usize>().unwrap();
 
         Ok(EIP712Domain {
             name: Some("CertificateAuth".to_string()),
             version: Some("1".to_string()),
             chain_id: Some(U256::from(chain_id).into()),
-            verifying_contract: Some(/*"0x891f0f5deb62730ccadf6d3ed28c2f0600ad95fd".parse().unwrap() //this is the contract that has the EIP 712, it should be dynamic*/
-                env::var("CONTRACT_ADDRESS").unwrap()
-                    .parse()
-                    .map_err(|_| anyhow::anyhow!("Invalid contract address")).unwrap()
-            ),
+            verifying_contract: Some(factory_address),
             salt: None,
         })
     }
+
 
     fn type_hash() -> Result<[u8; 32], Self::Error> {
         Ok(keccak256(
             "Certificate(string name,string uniqueId,string serial,uint256 date,address owner,string[] metadata)",
         ))
     }
+
 
     fn struct_hash(&self) -> Result<[u8; 32], Self::Error> {
         let metadata_bytes = ethers::abi::encode(&[ethers::abi::Token::Array(
@@ -100,7 +103,7 @@ impl Eip712 for Certificate {
 
 // Certificate DTO from frontend
 #[derive(Clone, Serialize, Deserialize, Debug, ToSchema)]
-pub struct CertificateDTO {
+pub struct SignedCertificate {
     pub name: String,
     pub unique_id: String,
     pub serial: String,
@@ -111,10 +114,9 @@ pub struct CertificateDTO {
     #[schema(value_type = String, format = Binary)]
     pub signature: String, // Hex-encoded signature
 }
-
-impl TryFrom<CertificateDTO> for Certificate {
+impl TryFrom<SignedCertificate> for Certificate {
     type Error = anyhow::Error;
-    fn try_from(dto: CertificateDTO) -> Result<Self, Self::Error> {
+    fn try_from(dto: SignedCertificate) -> Result<Self, Self::Error> {
         Ok(Certificate {
             name: dto.name,
             unique_id: dto.unique_id,
@@ -145,7 +147,7 @@ impl From<Certificate> for originality_factory::Certificate {
 
 //============ FOR TEST PURPOSES ALONE =======================
 #[derive(Clone, Serialize, Deserialize, Debug, ToSchema)]
-pub struct TestCertificate {
+pub struct CertificateData {
     pub name: String,
     pub unique_id: String,
     pub serial: String,
@@ -155,9 +157,9 @@ pub struct TestCertificate {
     pub metadata: Vec<String>,
 }
 
-impl TryFrom<TestCertificate> for Certificate {
+impl TryFrom<CertificateData> for Certificate {
     type Error = anyhow::Error;
-    fn try_from(dto: TestCertificate) -> Result<Self, Self::Error> {
+    fn try_from(dto: CertificateData) -> Result<Self, Self::Error> {
         Ok(Certificate {
             name: dto.name,
             unique_id: dto.unique_id,
@@ -180,3 +182,37 @@ pub struct RegInput {
     pub name: String,
 }
 
+// Custom EIP712Domain for ToSchema
+#[derive(Clone, Serialize, Deserialize, Debug, ToSchema)]
+pub struct CustomEIP712Domain {
+    #[schema(value_type = String, nullable = true)]
+    pub name: Option<String>,
+    #[schema(value_type = String, nullable = true)]
+    pub version: Option<String>,
+    #[schema(value_type = String, nullable = true)]
+    pub chain_id: Option<String>,
+    #[schema(value_type = String, nullable = true)]
+    pub verifying_contract: Option<String>,
+    #[schema(value_type = String, nullable = true)]
+    pub salt: Option<String>,
+}
+
+impl From<EIP712Domain> for CustomEIP712Domain {
+    fn from(domain: EIP712Domain) -> Self {
+        CustomEIP712Domain {
+            name: domain.name,
+            version: domain.version,
+            chain_id: domain.chain_id.map(|id| id.to_string()),
+            verifying_contract: domain.verifying_contract.map(|addr| format!("{:?}", addr)),
+            salt: domain.salt.map(|s| format!("{:?}", s)),
+        }
+    }
+}
+
+// EIP-712 object for frontend signing
+#[derive(Clone, Serialize, Deserialize, Debug, ToSchema)]
+pub struct Eip712Object {
+    pub domain: CustomEIP712Domain,
+    pub types: serde_json::Value,
+    pub value: serde_json::Value,
+}

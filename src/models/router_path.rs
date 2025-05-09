@@ -7,6 +7,7 @@ pub struct RouterPath {
     pub sign_up: String,
     pub get_owner: String,
     pub verify_signature: String,
+    pub create_certificate: String,
 }
 
 impl RouterPath {
@@ -17,6 +18,7 @@ impl RouterPath {
             sign_up: "/manufacturer_registers".to_string(),
             get_owner: "/get_owner/{address}".to_string(),
             verify_signature: "/verify_signature".to_string(),
+            create_certificate: "/create_certificate".to_string(),
         }
     }
 }

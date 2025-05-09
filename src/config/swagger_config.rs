@@ -1,15 +1,16 @@
 use crate::services::certificate_service::{
-    __path_generate_signature, __path_manufacturer_registers, __path_verify_authenticity, __path_get_owner, __path_verify_signature
+    __path_generate_signature, __path_manufacturer_registers, __path_verify_authenticity, __path_get_owner, __path_verify_signature,
+    __path_create_certificate
 };
 use utoipa::OpenApi;
-use crate::models::certificate_model::{RegInput, CertificateDTO, TestCertificate};
+use crate::models::certificate_model::{RegInput, SignedCertificate, CertificateData, Eip712Object};
 
 // Swagger/OpenAPI configuration
 #[derive(OpenApi)]
 #[openapi(
-    paths(verify_authenticity, generate_signature, manufacturer_registers, get_owner, verify_signature),
+    paths(verify_authenticity, generate_signature, manufacturer_registers, get_owner, verify_signature, create_certificate),
     components(
-        schemas(RegInput, TestCertificate, CertificateDTO),
+        schemas(RegInput, CertificateData, SignedCertificate, Eip712Object),
         // responses(Item)
     ),
     tags(

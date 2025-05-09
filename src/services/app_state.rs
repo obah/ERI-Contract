@@ -26,7 +26,7 @@ pub async fn init_app_state() -> anyhow::Result<AppState, Error> {
 
     // Initialize app state
     let state = AppState {
-        eth_client,
+        eth_client, //wallet address could be gotten from eth_client.signer.address()
         originality_factory,
         wallet_address: wallet.address(), //will remove after test
     };

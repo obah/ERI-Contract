@@ -5,7 +5,7 @@ use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use crate::config::swagger_config::ApiDoc;
 use crate::models::router_path::RouterPath;
-use crate::services::certificate_service::{generate_signature, manufacturer_registers, verify_authenticity, get_owner, verify_signature};
+use crate::services::certificate_service::{generate_signature, manufacturer_registers, verify_authenticity, get_owner, verify_signature, create_certificate};
 use crate::utility::AppState;
 
 pub fn paths(state: AppState, path: RouterPath) -> Router {
@@ -14,7 +14,8 @@ pub fn paths(state: AppState, path: RouterPath) -> Router {
         .route(&path.verify_authenticity, post(verify_authenticity))
         .route(&path.sign_up, post(manufacturer_registers))        
         .route(&path.get_owner, get(get_owner))        
-        .route(&path.verify_signature, post(verify_signature))        
+        .route(&path.verify_signature, post(verify_signature))
+        .route(&path.create_certificate, post(create_certificate))
         .merge(SwaggerUi::new("/swagger-ui")
             .url("/api-docs/openapi.json", ApiDoc::openapi()))
         .with_state(state)

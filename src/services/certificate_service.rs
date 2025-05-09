@@ -1,4 +1,4 @@
-use crate::models::certificate_model::{Certificate, CertificateDTO, TestCertificate};
+use crate::models::certificate_model::{Certificate, SignedCertificate, CustomEIP712Domain, Eip712Object, CertificateData};
 use crate::models::events::ManufacturerRegistered;
 use crate::utility::{to_bytes, AppState};
 use axum::{Json, extract::State, extract::Path, http::StatusCode};
@@ -25,7 +25,7 @@ abigen!(
 #[utoipa::path(
     post,
     path = "/verify_authenticity",
-    request_body = CertificateDTO,
+    request_body = SignedCertificate,
     responses(
         (status = 200, description = "Signature verification result", body = String),
         (status = 400, description = "Invalid input"),
@@ -34,7 +34,7 @@ abigen!(
 )]
 pub async fn verify_authenticity(
     State(state): State<AppState>,
-    Json(cert): Json<CertificateDTO>,
+    Json(cert): Json<SignedCertificate>,
 ) -> Result<Json<String>, StatusCode> {
     let certificate: Certificate = cert
         .clone()
@@ -103,44 +103,85 @@ pub async fn verify_authenticity(
         )))
     }
 }
-//=======================
-
 #[utoipa::path(
     post,
-    path = "/generate_signature",
-    request_body = TestCertificate,
+    path = "/create_certificate",
+    request_body = CertificateData,
     responses(
-        (status = 200, description = "Signature verification result", body = String),
+        (status = 200, description = "EIP-712 object created successfully", body = Eip712Object),
         (status = 400, description = "Invalid input"),
         (status = 500, description = "Internal server error")
     )
 )]
-pub async fn generate_signature(
-    State(state): State<AppState>,
-    Json(cert): Json<TestCertificate>,
-) -> Result<Json<String>, StatusCode> {
+pub async fn create_certificate(
+    Json(cert): Json<CertificateData>,
+) -> Result<Json<Eip712Object>, StatusCode> {
+    // Validate inputs
+    if cert.name.is_empty() || cert.unique_id.is_empty() || cert.serial.is_empty() {
+        eprintln!("Empty name, unique_id, or serial");
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    if cert.owner.is_empty() {
+        eprintln!("Empty manufacturer_address");
+        return Err(StatusCode::BAD_REQUEST);
+    }
 
+    // Convert to Certificate
     let certificate: Certificate = cert
-        .clone()
         .try_into()
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-
-    let signature: Signature = state
-        .eth_client
-        .signer()
-        .sign_typed_data(&certificate)
-        .await
         .map_err(|e| {
-            eprintln!("Signature error: {:?}", e);
+            eprintln!("Certificate conversion error: {:?}", e);
+            StatusCode::BAD_REQUEST
+        })?;
+
+    // Create EIP-712 domain
+    let domain = certificate
+        .domain()
+        .map_err(|e| {
+            eprintln!("EIP-712 domain error: {:?}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
 
-    Ok(Json(signature.to_string()))
+    // Convert to CustomEIP712Domain
+    let custom_domain = CustomEIP712Domain::from(domain);
+
+    // Define EIP-712 types
+    let types = serde_json::json!({
+        "Certificate": [
+            { "name": "name", "type": "string" },
+            { "name": "uniqueId", "type": "string" },
+            { "name": "serial", "type": "string" },
+            { "name": "date", "type": "uint256" },
+            { "name": "owner", "type": "address" },
+            { "name": "metadata", "type": "string[]" }
+        ]
+    });
+
+    // Create EIP-712 value
+    let value = serde_json::json!({
+        "name": certificate.name,
+        "uniqueId": certificate.unique_id,
+        "serial": certificate.serial,
+        "date": certificate.date.to_string(),
+        "owner": format!("{:?}", certificate.owner),
+        "metadata": certificate.metadata
+    });
+
+    let eip712_object = Eip712Object {
+        domain: custom_domain,
+        types,
+        value,
+    };
+
+    eprintln!("EIP-712 object created: {:?}", eip712_object);
+    Ok(Json(eip712_object))
 }
+
+//============== FOR TEST ONLY => WILL BE REMOVED WHEN DONE =======================
 
 #[utoipa::path(
     post,
-    path = "/manufacturer_registers",
+    path = "/manufacturer_registers", //TODO: Registration will be done from the frontend
     request_body = RegInput,
     responses(
         (status = 200, description = "Signature verification result", body = String),
@@ -207,10 +248,7 @@ pub async fn manufacturer_registers(
     )))
 }
 
-
-//============== FOR TEST =======================
-
-#[utoipa::path(
+#[utoipa::path( //TODO: This was just used to check the contract status
     get,
     path = "/get_owner/{address}",
     params(
@@ -243,13 +281,10 @@ pub async fn get_owner(
 }
 
 
-//============== FOR TESTING PURPOSE =================================
-
-
-#[utoipa::path(
+#[utoipa::path( //TODO: This will be called from the frontend, just created this for test
     post,
     path = "/verify_signature",
-    request_body = TestCertificate,
+    request_body = CertificateData,
     responses(
         (status = 200, description = "Signature verified on-chain successfully", body = String),
         (status = 400, description = "Invalid signature"),
@@ -258,7 +293,7 @@ pub async fn get_owner(
 )]
 pub async fn verify_signature(
     State(state): State<AppState>,
-    Json(cert): Json<TestCertificate>,
+    Json(cert): Json<CertificateData>,
 ) -> anyhow::Result<Json<String>, StatusCode> {
     let certificate: Certificate = cert
         .clone()
@@ -301,4 +336,37 @@ pub async fn verify_signature(
        eprintln!("Result: {:?}", result);
 
     Ok(Json(format!("Result: {:?}", result)))
+}
+
+#[utoipa::path( //TODO: This is purely for testing purpose
+    post,
+    path = "/generate_signature",
+    request_body = CertificateData,
+    responses(
+        (status = 200, description = "Signature verification result", body = String),
+        (status = 400, description = "Invalid input"),
+        (status = 500, description = "Internal server error")
+    )
+)]
+pub async fn generate_signature(
+    State(state): State<AppState>,
+    Json(cert): Json<CertificateData>,
+) -> Result<Json<String>, StatusCode> {
+
+    let certificate: Certificate = cert
+        .clone()
+        .try_into()
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    let signature: Signature = state
+        .eth_client
+        .signer()
+        .sign_typed_data(&certificate)
+        .await
+        .map_err(|e| {
+            eprintln!("Signature error: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    Ok(Json(signature.to_string()))
 }

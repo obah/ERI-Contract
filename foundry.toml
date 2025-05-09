@@ -5,8 +5,8 @@ libs = ["lib"]
 test = "test"
 cache_path = 'forge-cache'
 
-solc_version = '0.8.29'
 auto_detect_solc = true
+solc_version = '0.8.30'
 optimizer = true
 optimizer_runs = 200
 
