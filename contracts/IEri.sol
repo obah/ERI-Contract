@@ -13,7 +13,6 @@ interface IEri {
 
     struct Manufacturer {
         string name;
-        address manufacturerContract;
         address manufacturerAddress;
     }
 

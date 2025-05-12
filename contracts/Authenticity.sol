@@ -3,7 +3,7 @@ pragma solidity ^0.8.29;
 
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "./Originality.sol";
+import "contracts/EriErrors.sol";
 import "contracts/IEri.sol";
 
 contract Authenticity is EIP712 {
@@ -23,11 +23,11 @@ contract Authenticity is EIP712 {
 
     event ManufacturerRegistered(
         address indexed manufacturerAddress,
-        address indexed manufacturerContract
+        string indexed manufacturerName
     );
 
     modifier addressZeroCheck(address _user) {
-        if (_user == address(0)) revert EriErrors.ONLY_OWNER(_user);
+        if (_user == address(0)) revert EriErrors.ADDRESS_ZERO(_user);
         _;
     }
 
@@ -36,38 +36,46 @@ contract Authenticity is EIP712 {
     }
 
 
-    function manufacturerRegisters(string memory name) external addressZeroCheck(msg.sender) { // this will be done on-chain
+    function manufacturerRegisters(string memory name) external addressZeroCheck(msg.sender) {
 
-        address _owner = msg.sender;
+        address user = msg.sender;
 
-        //making sure there's no duplicate registration
-        if (manufacturers[_owner].manufacturerAddress != address(0) &&
-            manufacturers[_owner].manufacturerContract != address(0)) {
-            revert EriErrors.ALREADY_REGISTERED(msg.sender);
-        }
-        //just added this
-        if (names[name] != address(0)) {
-            revert EriErrors.NAME_ALREADY_EXIST(name);
+        if (isRegistered(user)) {
+            revert EriErrors.ALREADY_REGISTERED(user);
         }
 
-        address manufacturerContract = address( //create the manufacturer contract
-            new Originality(/*OWNERSHIP, */_owner)
-        );
+        if (bytes(name).length < 2) {
+            revert EriErrors.INVALID_MANUFACTURER_NAME(name);
+        }
+
+        if (names[name] != address (0)) {
+            revert EriErrors.NAME_NOT_AVAILABLE(name);
+        }
 
         //caller will be the owner of the contract, that's why you must call from your wallet
         IEri.Manufacturer storage newManufacturer = manufacturers[msg.sender];
-
-        newManufacturer.manufacturerContract = manufacturerContract;
-        newManufacturer.manufacturerAddress = _owner;
+        newManufacturer.manufacturerAddress = user;
         newManufacturer.name = name;
 
-        names[name] = _owner;
+        names[name] = user;
 
-        emit ManufacturerRegistered(_owner, manufacturerContract);
+        emit ManufacturerRegistered(user, name);
     }
 
     function getManufacturerByName(string calldata manufacturerName) external view returns (address)  {
-        return names[manufacturerName];
+
+        address manufacturer = names[manufacturerName];
+        if (manufacturer == address (0)) {
+            revert EriErrors.DOES_NOT_EXIST();
+        }
+        return manufacturer;
+    }
+
+    function getManufacturer(address userAddress) external view returns (IEri.Manufacturer memory) {
+        if (manufacturers[userAddress].manufacturerAddress == address (0)) {
+            revert EriErrors.DOES_NOT_EXIST();
+        }
+        return manufacturers[userAddress];
     }
 
     //this will be used for off-chain verification
@@ -75,11 +83,9 @@ contract Authenticity is EIP712 {
 
         address manufacturer = manufacturers[expectedManufacturer].manufacturerAddress;
 
-        if (manufacturer == address(0)) {
-            revert EriErrors.CONTRACT_DOEST_NOT_EXIST();
+        if (manufacturer == address(0) || expectedManufacturer != manufacturer) {
+            revert EriErrors.DOES_NOT_EXIST();
         }
-
-        assert(expectedManufacturer == manufacturer);
 
         return manufacturer;
     }
@@ -106,9 +112,10 @@ contract Authenticity is EIP712 {
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, signature);
 
-        //to get the owner of the contract
+        //very important, to make sure the owner is genuine and valid
         address manufacturer = getManufacturerAddress(certificate.owner);
 
+        //check the signer against a genuine manufacturer
         if (signer != manufacturer) {
             revert EriErrors.INVALID_SIGNATURE();
         }
@@ -116,9 +123,15 @@ contract Authenticity is EIP712 {
         return true;
     }
 
+    function hashTypedDataV4(bytes32 structHash) external view returns(bytes32) {
+        return _hashTypedDataV4(structHash);
+    }
+
     function userClaimOwnership(IEri.Certificate memory certificate, bytes memory signature) external addressZeroCheck(msg.sender) {
+        //first check the authenticity of the signature
         bool isValid = verifySignature(certificate, signature);
 
+        //by design, this cannot be false because instead of false, it reverts but in case
         if (!isValid) {
             revert EriErrors.INVALID_SIGNATURE();
         }
@@ -128,12 +141,9 @@ contract Authenticity is EIP712 {
         OWNERSHIP.createItem(msg.sender, certificate, manufacturerName);
     }
 
-//    function getManufacturerContract(address manufacturerAddress) internal view returns (IEri) {
-//        address manufacturer = manufacturers[manufacturerAddress].manufacturerAddress;
-//
-//        if (manufacturer == address(0)) {
-//            revert EriErrors.CONTRACT_DOEST_NOT_EXIST();
-//        }
-//        return manufacturer;
-//    }
+    function isRegistered(
+        address user
+    ) internal view returns (bool) {
+        return manufacturers[user].manufacturerAddress != address(0);
+    }
 }

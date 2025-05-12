@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.29;
 
-import "../contracts/Ownership.sol";
-import "../contracts/EriErrors.sol";
+import {EriErrors} from "../contracts/EriErrors.sol";
 import {IEri} from "../contracts/IEri.sol";
 import {OwnershipLib} from "../contracts/OwnershipLib.sol";
 import {Ownership} from "../contracts/Ownership.sol";

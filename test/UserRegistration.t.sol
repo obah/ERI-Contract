@@ -60,7 +60,7 @@ contract UserRegistration is Test {
         registerUser(firstOwner, username);
 
         vm.prank(secondOwner);
-        vm.expectRevert(abi.encodeWithSelector(EriErrors.USERNAME_NOT_AVAILABLE.selector, username));
+        vm.expectRevert(abi.encodeWithSelector(EriErrors.NAME_NOT_AVAILABLE.selector, username));
         ownership.userRegisters(username);
     }
 

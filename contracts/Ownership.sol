@@ -148,6 +148,7 @@ contract Ownership {
             newOwner,
             itemHash
         );
+
         emit OwnershipClaimed(newOwner, oldOwner);
     }
 

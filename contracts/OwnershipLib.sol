@@ -15,12 +15,10 @@ library OwnershipLib {
         if (bytes(username).length < 3) {
             revert EriErrors.USERNAME_MUST_BE_AT_LEAST_3_LETTERS();
         }
-
-
         //reverts if username is already used by someone else
         if (isRegistered(users, username)) {
             //no duplicate username and address
-            revert EriErrors.USERNAME_NOT_AVAILABLE(username);
+            revert EriErrors.NAME_NOT_AVAILABLE(username);
         }
         //reverts if wallet address has already registered
         if (isNotEmpty(usernames[userAddress])) {
