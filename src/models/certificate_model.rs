@@ -182,6 +182,7 @@ pub struct RegInput {
     pub name: String,
 }
 
+
 // Custom EIP712Domain for ToSchema
 #[derive(Clone, Serialize, Deserialize, Debug, ToSchema)]
 pub struct CustomEIP712Domain {
@@ -190,13 +191,16 @@ pub struct CustomEIP712Domain {
     #[schema(value_type = String, nullable = true)]
     pub version: Option<String>,
     #[schema(value_type = String, nullable = true)]
-    pub chain_id: Option<String>,
+    #[serde(rename = "chainId")]
+    pub chain_id: Option<String>, // Serialize as chainId
     #[schema(value_type = String, nullable = true)]
-    pub verifying_contract: Option<String>,
+    #[serde(rename = "verifyingContract")]
+    pub verifying_contract: Option<String>, // Serialize as verifyingContract
     #[schema(value_type = String, nullable = true)]
     pub salt: Option<String>,
 }
 
+// Convert EIP712Domain to CustomEIP712Domain
 impl From<EIP712Domain> for CustomEIP712Domain {
     fn from(domain: EIP712Domain) -> Self {
         CustomEIP712Domain {
@@ -208,6 +212,7 @@ impl From<EIP712Domain> for CustomEIP712Domain {
         }
     }
 }
+
 
 // EIP-712 object for frontend signing
 #[derive(Clone, Serialize, Deserialize, Debug, ToSchema)]

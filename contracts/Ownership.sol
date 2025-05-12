@@ -1,24 +1,30 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.30;
+pragma solidity 0.8.29;
 
-import "./OwnershipLib.sol";
 import "./EriErrors.sol";
 import "./IEri.sol";
+import "contracts/OwnershipLib.sol";
 
 contract Ownership {
     using OwnershipLib for *;
 
-    address private immutable owner;
+    address public immutable owner;
     // this links username to a user profile
-    mapping(string => IEri.UserProfile) public users;
+    mapping(string => IEri.UserProfile) private users;
+    //link wallet address to username
+    mapping(address => string) private usernames;
+
     //this links itemId to the address of the owner
-    mapping(string itemId => address owner) public owners;
-    // this links the ownership code to the temp owner
-    mapping(bytes32 ownershipCode => address tempOwner) public temp;
+    mapping(string => address) private owners;
     // this links a user address to the itemId to the Item
-    mapping(address owner => mapping(string itemId => IEri.Item)) public ownedItems;
+    mapping(address => mapping(string => IEri.Item)) private ownedItems;
+    //all items belonging to a user
+    mapping(address => IEri.Item[]) private myItems;
+
+    // this links the ownership code to the temp owner
+    mapping(bytes32 => address) private temp;
     //this links change of ownership code to the new owner to the Item
-    mapping(bytes32 ownershipHash => mapping(address tempOwner => IEri.Item)) public tempOwners;
+    mapping(bytes32 => mapping(address => IEri.Item)) private tempOwners;
 
     event ContractCreated(
         address indexed contractAddress,
@@ -26,10 +32,13 @@ contract Ownership {
     );
 
     event UserRegistered(address indexed userAddress, string indexed username);
-    event OwnershipCode(bytes32 indexed ownershipCode, address indexed tempOwner);
+    event OwnershipCode(
+        bytes32 indexed ownershipCode,
+        address indexed tempOwner
+    );
     event ItemCreated(string indexed itemId, address indexed owner);
     event OwnershipClaimed(address indexed newOwner, address indexed oldOwner);
-
+    event CodeRevoked(bytes32);
 
     constructor(address _owner) {
         owner = _owner;
@@ -37,16 +46,16 @@ contract Ownership {
         emit ContractCreated(address(this), _owner);
     }
 
+
+
     modifier addressZeroCheck(address _user) {
-        if (_user == address(0)) revert EriErrors.ONLY_OWNER(_user);
+        if (_user == address(0)) revert EriErrors.ADDRESS_ZERO(_user);
         _;
     }
 
-    modifier onlyOwner(address _caller, string memory itemId) {
-        IEri.Item memory _item = ownedItems[_caller][itemId];
-
-        if (_caller != _item.owner) revert EriErrors.ONLY_OWNER(_caller);
-
+    modifier onlyOwner(string memory itemId) {
+        if (msg.sender != owners[itemId])
+            revert EriErrors.ONLY_OWNER(msg.sender);
         _;
     }
 
@@ -56,38 +65,46 @@ contract Ownership {
     // if not, we register them with their username
     function userRegisters(string calldata username)
     external
-    addressZeroCheck(msg.sender)
-    {
+    addressZeroCheck(msg.sender) {
         address userAddress = msg.sender;
-        //reverts if username already exist
-        if (users[username].isRegistered) {
-            revert EriErrors.ALREADY_REGISTERED(userAddress);
-        }
-        //this delegates the logic to the library
-        users._userRegisters(userAddress, username);
-
+        users._userRegisters(usernames, userAddress, username);
         emit UserRegistered(userAddress, username);
     }
 
-    function isRegistered(string calldata _username)
+    function getUser(address userAddress)
+    public
+    view
+    returns (IEri.UserProfile memory) {
+        return users._getUser(usernames, userAddress);
+    }
+
+    //when a user claims item for the first time, the Originality contract call this function
+    function createItem(
+        address _caller,
+        IEri.Certificate memory certificate,
+        string memory manufacturerName
+    ) external addressZeroCheck(msg.sender) addressZeroCheck(_caller) {
+        users._createItem(
+            owners,
+            ownedItems,
+            myItems,
+            usernames,
+            _caller,
+            certificate,
+            manufacturerName
+        );
+
+        emit ItemCreated(certificate.uniqueId, _caller);
+    }
+
+    function getAllItemsFor(address user)
     external
     view
-    returns (bool)
-    {
-        return users[_username].isRegistered;
+    returns (IEri.Item[] memory) {
+        return users._getAllItemsFor(usernames, ownedItems, myItems, user);
     }
 
-    function setItemInOwnership(address user, IEri.Item memory item)
-    external
-    addressZeroCheck(user)
-    {
-        string memory id = item.itemId;
-
-        ownedItems[user][id] = item; //set user & item id to Item
-        owners[id] = user; //item id to user
-
-        emit ItemCreated(id, user);
-    }
+    //========================================
 
     //when the owner wants to change ownership, he already knows who the new owner will be
     //so he generates a change of ownership code. he could he either give you the code or
@@ -102,79 +119,66 @@ contract Ownership {
     external
     addressZeroCheck(msg.sender) //make sure the caller is not address 0
     addressZeroCheck(tempOwner) // make sure the temp owner is not address 0
-    onlyOwner(msg.sender, itemId) { // make sure only the item owner can generate code for the item
-
-        IEri.Item memory _item = ownedItems[msg.sender][itemId];
-
-        //this is the code the owner will give to the new owner to claim ownership
-        bytes32 ownershipHash = keccak256(abi.encode(_item, tempOwner));
-
-        // if you have already generated the code, you don't need to generate anymore
-        if (tempOwners[ownershipHash][tempOwner].owner != address(0)) {
-            revert EriErrors.CODE_ALREADY_GENERATED();
-        }
-
-        tempOwners[ownershipHash][tempOwner] = _item;
-        temp[ownershipHash] = tempOwner;
-
-        emit OwnershipCode(ownershipHash, tempOwner);
+    onlyOwner(itemId) {
+        bytes32 itemHash = users._generateChangeOfOwnershipCode(
+            usernames,
+            ownedItems,
+            temp,
+            tempOwners,
+            itemId,
+            tempOwner
+        );
+        emit OwnershipCode(itemHash, tempOwner);
     }
 
-    function newOwnerClaimOwnership(bytes32 ownershipHash) external addressZeroCheck(msg.sender) {
-
-        address newOwner = msg.sender;
-
-        IEri.Item memory _item = tempOwners[ownershipHash][newOwner];
-
-        address oldOwner = _item.owner;
-
-        string memory id = _item.itemId;
-
-        if (oldOwner == address(0)) {
-            revert EriErrors.UNAUTHORIZED(newOwner);
-        }
-
-        _item.owner = newOwner;
-
-        ownedItems[newOwner][id] = _item; //save the item with the new owner key
-        owners[id] = newOwner;
-
-        delete ownedItems[oldOwner][id]; //delete the item from the old owner mapping
-        delete tempOwners[ownershipHash][newOwner]; //delete the item from the ownership code
-        delete temp[ownershipHash]; // the ownershipHash no longer point to the temp owner
-
-        emit OwnershipClaimed(newOwner, oldOwner);
+    function newOwnerClaimOwnership(bytes32 itemHash)
+    external
+    addressZeroCheck(msg.sender) {
+        address oldOwner = users._newOwnerClaimOwnership(
+            usernames,
+            ownedItems,
+            myItems,
+            owners,
+            temp,
+            tempOwners,
+            itemHash
+        );
+        emit OwnershipClaimed(msg.sender, oldOwner);
     }
 
-    function ownerRevokeCode(bytes32 ownershipCode) external {
-        address tempOwner = temp[ownershipCode];
-        address currentOwner = msg.sender;
-
-        IEri.Item memory _item = tempOwners[ownershipCode][tempOwner];
-
-        if (_item.owner != currentOwner) {
-            revert EriErrors.ONLY_OWNER(currentOwner);
-        }
-        delete tempOwners[ownershipCode][currentOwner];
-        delete temp[ownershipCode];
+    function ownerRevokeCode(bytes32 itemHash)
+    external
+    addressZeroCheck(msg.sender) {
+        users._ownerRevokeCode(usernames, temp, tempOwners, itemHash);
+        emit CodeRevoked(itemHash);
     }
 
     //this function is meant to verify the owner of an item
     //it will return the item and all of it's information, including the owner
-    function getItem(string memory itemId) external view returns (IEri.Item memory _item) {
-
-        address user = owners[itemId];
-
-        if (user == address(0)) {
-            revert EriErrors.ITEM_DOESNT_EXIST(itemId);
-        }
-
-        return ownedItems[user][itemId];
+    function getItem(string memory itemId)
+    public
+    view
+    returns (IEri.Item memory) {
+        return ownedItems._getItem(owners, itemId);
     }
 
-    function isOwner(address user, string memory itemId) external view returns (bool) {
-        IEri.Item memory _item = ownedItems[user][itemId];
+    function verifyOwnership(string memory itemId)
+    external
+    view
+    returns (IEri.Owner memory) {
+        return ownedItems._verifyOwnership(owners, usernames, itemId);
+    }
 
-        return _item.owner == user;
+    function isOwner(address user, string memory itemId)
+    external
+    view
+    returns (bool) {
+
+        return ownedItems._isOwner(user, itemId);
+    }
+
+    function iOwn(string memory itemId) external view returns (bool) {
+
+        return ownedItems._iOwn(itemId);
     }
 }

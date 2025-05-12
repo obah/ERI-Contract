@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.30;
+pragma solidity ^0.8.29;
 
 contract EriErrors {
     error ONLY_OWNER(address);
@@ -8,7 +8,15 @@ contract EriErrors {
     error CODE_ALREADY_GENERATED();
     error UNAUTHORIZED(address);
     error ITEM_DOESNT_EXIST(string);
+    error DOES_NOT_EXIST();
     error CONTRACT_DOEST_NOT_EXIST();
-    error NANE_ALREADY_EXIST(string);
+    error NAME_ALREADY_EXIST(string);
     error INVALID_SIGNATURE();
+    error ITEM_BELONG_TO_ANOTHER(string);
+    error ITEM_NOT_CLAIMED_YET();
+    error NOT_REGISTERED(address);
+    error USERNAME_NOT_AVAILABLE(string);
+    error USER_DOES_NOT_EXIST(address);
+    error CANNOT_GENERATE_CODE_FOR_YOURSELF(address);
+    error USERNAME_MUST_BE_AT_LEAST_3_LETTERS();
 }

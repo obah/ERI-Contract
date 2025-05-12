@@ -11,12 +11,14 @@ use ethers::{
     signers::Signer,
     types::Signature,
 };
+use ethers::utils::hex::ToHexExt;
+use hex::ToHex;
 use crate::models::certificate_model::RegInput;
 
 // abi path
 abigen!(
     OriginalityFactory,
-    "./hh-artifacts/contracts/OriginalityFactory.sol/OriginalityFactory.json",
+    "./hh-artifacts/contracts/Authenticity.sol/Authenticity.sol.json",
     event_derives(serde::Deserialize, serde::Serialize)
 );
 
@@ -73,10 +75,10 @@ pub async fn verify_authenticity(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
+    eprintln!("Signer: {:?}", signer);
     // very important: double check to make sure the certificate owner is the signer of the signature
     assert_eq!(signer, certificate.owner);
 
-    eprintln!("Signer: {:?}", signer);
 
     // Fetch the contract's owner
     let contract = OriginalityFactory::new(state.originality_factory, state.eth_client.clone());
@@ -103,6 +105,7 @@ pub async fn verify_authenticity(
         )))
     }
 }
+
 #[utoipa::path(
     post,
     path = "/create_certificate",
@@ -125,6 +128,8 @@ pub async fn create_certificate(
         eprintln!("Empty manufacturer_address");
         return Err(StatusCode::BAD_REQUEST);
     }
+    
+    println!("owner: {:?}", cert.owner);
 
     // Convert to Certificate
     let certificate: Certificate = cert
@@ -156,6 +161,7 @@ pub async fn create_certificate(
             { "name": "metadata", "type": "string[]" }
         ]
     });
+    
 
     // Create EIP-712 value
     let value = serde_json::json!({
@@ -163,7 +169,7 @@ pub async fn create_certificate(
         "uniqueId": certificate.unique_id,
         "serial": certificate.serial,
         "date": certificate.date.to_string(),
-        "owner": format!("{:?}", certificate.owner),
+        "owner": ToHexExt::encode_hex_upper_with_prefix(&certificate.owner),
         "metadata": certificate.metadata
     });
 
@@ -325,7 +331,7 @@ pub async fn verify_signature(
     eprintln!("Address: {:?}", state.eth_client.signer().address());
 
     let result = contract
-        .verify_signature(state.eth_client.signer().address(), contract_cert, sig_bytes)
+        .verify_signature(contract_cert, sig_bytes)
         .call()
         .await
         .map_err(|e| {

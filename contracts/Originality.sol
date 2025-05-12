@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.30;
+pragma solidity ^0.8.29;
 
 
 import "./EriErrors.sol";
@@ -8,9 +8,6 @@ import "./IEri.sol";
 contract Originality {
 
     address private immutable owner;
-//    IEri private immutable OWNERSHIP;
-
-    error InvalidSignature(address signer, bool result);
 
     event ItemCreated(string name, bytes32 indexed uniqueId, address indexed owner);
     event OwnershipClaimed(address indexed newOwner, string indexed itemId);
@@ -25,10 +22,8 @@ contract Originality {
         _;
     }
 
-    constructor (/*address ownershipContract,*/ address contractOwner) {
-
+    constructor (address contractOwner) {
         owner = contractOwner;
-//        OWNERSHIP = IEri(ownershipContract);
     }
     
 

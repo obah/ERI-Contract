@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.30;
+pragma solidity ^0.8.29;
 
-import "./Originality.sol";
-import "./Originality.sol";
 
 interface IEri {
 
@@ -29,11 +27,20 @@ interface IEri {
     }
 
     struct Item {
-        address owner;
-        string itemId; // something very unique like the IMEI of a phone
         string name;
-        uint256 manufacturerId;
+        string itemId; // something very unique like the IMEI of a phone
+        string serial;
+        uint256 date;
+        address owner;
+        string manufacturer;
         string[] metadata;
+    }
+
+    struct Owner {
+        string name;
+        string itemId; // something very unique like the IMEI of a phone
+        string username;
+        address owner;
     }
 
     function ownerCreatedItem(
@@ -47,6 +54,10 @@ interface IEri {
     external
     view
     returns (IEri.Item memory);
+
+    function createItem(address _caller, IEri.Certificate memory certificate, string memory manufacturerName) external;
+
+    //========
 
     function manufacturerGeneratesCode(string memory itemId)
     external
