@@ -182,15 +182,6 @@ contract AuthenticityTest is Test {
         authenticity.verifySignature(certificate, signature);
     }
 
-//    function testVerifySignatureMalformedSignature() public {
-//        registerManufacturer(manufacturerWithKey, "Xiaomi");
-//
-//        bytes memory invalidSignature = new bytes(64);
-//        vm.expectRevert(abi.encodeWithSelector(EriErrors.INVALID_SIGNATURE.selector));
-//
-//        authenticity.verifySignature(certificate, invalidSignature);
-//    }
-
     function testUserClaimOwnership() public {
         registerManufacturer(manufacturerWithKey, "Xiaomi");
         bytes memory signature = signCertificate(manufacturerWithKey, manufacturerPrivateKey, certificate);
