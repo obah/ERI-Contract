@@ -8,7 +8,7 @@ import {OwnershipLib} from "../contracts/OwnershipLib.sol";
 import {Ownership} from "../contracts/Ownership.sol";
 import {Test} from "forge-std/Test.sol";
 
-contract RegisterInOwnership is Test {
+contract UserRegistration is Test {
     Ownership public ownership;
     address public ownershipAddress;
 

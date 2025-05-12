@@ -120,12 +120,14 @@ contract Ownership {
     addressZeroCheck(msg.sender) //make sure the caller is not address 0
     addressZeroCheck(tempOwner) // make sure the temp owner is not address 0
     onlyOwner(itemId) {
+
         bytes32 itemHash = users._generateChangeOfOwnershipCode(
             usernames,
             ownedItems,
             temp,
             tempOwners,
             itemId,
+            msg.sender,
             tempOwner
         );
         emit OwnershipCode(itemHash, tempOwner);
@@ -134,6 +136,8 @@ contract Ownership {
     function newOwnerClaimOwnership(bytes32 itemHash)
     external
     addressZeroCheck(msg.sender) {
+
+        address newOwner = msg.sender;
         address oldOwner = users._newOwnerClaimOwnership(
             usernames,
             ownedItems,
@@ -141,15 +145,20 @@ contract Ownership {
             owners,
             temp,
             tempOwners,
+            newOwner,
             itemHash
         );
-        emit OwnershipClaimed(msg.sender, oldOwner);
+        emit OwnershipClaimed(newOwner, oldOwner);
+    }
+
+    function getTempOwner(bytes32 itemHash) external view returns(address)  {
+        return temp[itemHash];
     }
 
     function ownerRevokeCode(bytes32 itemHash)
     external
     addressZeroCheck(msg.sender) {
-        users._ownerRevokeCode(usernames, temp, tempOwners, itemHash);
+        users._ownerRevokeCode(usernames, temp, tempOwners, msg.sender, itemHash);
         emit CodeRevoked(itemHash);
     }
 
@@ -179,6 +188,6 @@ contract Ownership {
 
     function iOwn(string memory itemId) external view returns (bool) {
 
-        return ownedItems._iOwn(itemId);
+        return ownedItems._iOwn(msg.sender, itemId);
     }
 }

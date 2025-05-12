@@ -136,18 +136,20 @@ library OwnershipLib {
         mapping(bytes32 => address) storage temp,
         mapping(bytes32 => mapping(address => IEri.Item)) storage tempOwners,
         string memory itemId,
+        address caller,
         address tempOwner
     ) external returns (bytes32) {
-        if (tempOwner == msg.sender) {
-            revert EriErrors.CANNOT_GENERATE_CODE_FOR_YOURSELF(msg.sender);
+
+        if (tempOwner == caller) {
+            revert EriErrors.CANNOT_GENERATE_CODE_FOR_YOURSELF(caller);
         }
         // make sure only the item owner can generate code for the item
 
-        if (!isRegistered(users, usernames[msg.sender])) {
-            revert EriErrors.NOT_REGISTERED(msg.sender);
+        if (!isRegistered(users, usernames[caller])) {
+            revert EriErrors.NOT_REGISTERED(caller);
         }
 
-        IEri.Item memory _item = ownedItems[msg.sender][itemId];
+        IEri.Item memory _item = ownedItems[caller][itemId];
 
         //this is the code the owner will give to the new owner to claim ownership
         bytes32 itemHash = keccak256(abi.encode(_item)); //it will always be the same every time
@@ -157,10 +159,10 @@ library OwnershipLib {
             revert EriErrors.ITEM_NOT_CLAIMED_YET();
         }
 
-        // if you have already generated the code, you don't need to generate anymore
-        if (tempOwners[itemHash][tempOwner].owner != address(0)) {
-            revert EriErrors.CODE_ALREADY_GENERATED();
-        }
+        // if you have already generated the code, you don't need to generate anymore (no need anymore)
+//        if (tempOwners[itemHash][tempOwner].owner != address(0)) {
+//            revert EriErrors.CODE_ALREADY_GENERATED();
+//        }
 
         tempOwners[itemHash][tempOwner] = _item;
         temp[itemHash] = tempOwner;
@@ -176,24 +178,22 @@ library OwnershipLib {
         mapping(string => address) storage owners,
         mapping(bytes32 => address) storage temp,
         mapping(bytes32 => mapping(address => IEri.Item)) storage tempOwners,
+        address _caller,
         bytes32 itemHash
     ) external returns (address) {
-        if (!isRegistered(users, usernames[msg.sender])) {
-            revert EriErrors.NOT_REGISTERED(msg.sender);
+        if (!isRegistered(users, usernames[_caller])) {
+            revert EriErrors.NOT_REGISTERED(_caller);
         }
 
-        address newOwner = msg.sender;
-
+        address newOwner = _caller;
         address tempOwner = temp[itemHash];
-
-        assert(tempOwner == newOwner); //making sure the msg.sender is the tempOwner;
 
         IEri.Item memory _item = tempOwners[itemHash][newOwner];
 
         address oldOwner = _item.owner;
 
-        if (oldOwner == address(0)) {
-            //that means msg.sender was not authorized to claim the item
+        if (tempOwner != newOwner || oldOwner == address(0)) {
+            //that means msg.sender was not authorized to claim the item or itemHash is revoked
             revert EriErrors.UNAUTHORIZED(newOwner);
         }
         string memory id = _item.itemId;
@@ -235,14 +235,15 @@ library OwnershipLib {
         mapping(address => string) storage usernames,
         mapping(bytes32 => address) storage temp,
         mapping(bytes32 => mapping(address => IEri.Item)) storage tempOwners,
+        address _caller,
         bytes32 itemHash
     ) external returns (bytes32) {
-        if (!isRegistered(users, usernames[msg.sender])) {
-            revert EriErrors.NOT_REGISTERED(msg.sender);
+        if (!isRegistered(users, usernames[_caller])) {
+            revert EriErrors.NOT_REGISTERED(_caller);
         }
 
         address tempOwner = temp[itemHash];
-        address currentOwner = msg.sender;
+        address currentOwner = _caller;
 
         IEri.Item memory _item = tempOwners[itemHash][tempOwner];
 
@@ -295,21 +296,15 @@ library OwnershipLib {
         address user,
         string memory itemId
     ) external view returns (bool) {
-
-        IEri.Item memory _item = ownedItems[user][itemId];
-
-        if (_item.owner == address(0)) {
-            revert EriErrors.ITEM_DOESNT_EXIST(itemId);
-        }
-        return _item.owner == user;
+        return ownedItems[user][itemId].owner == user;
     }
 
     function _iOwn(
         mapping(address => mapping(string => IEri.Item)) storage ownedItems,
-        string memory itemId) external view returns (bool) {
-
-        IEri.Item memory _item = ownedItems[msg.sender][itemId];
-        return _item.owner == msg.sender;
+        address _caller,
+        string memory itemId
+    ) external view returns (bool) {
+        return ownedItems[_caller][itemId].owner == _caller;
     }
 
     function isNotEmpty(string memory s) internal pure returns (bool) {
