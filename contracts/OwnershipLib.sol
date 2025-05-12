@@ -63,6 +63,10 @@ library OwnershipLib {
             revert EriErrors.NOT_REGISTERED(_caller);
         }
 
+        if (certificate.owner == address (0)) {
+            revert EriErrors.ADDRESS_ZERO(address (0));
+        }
+
         string memory itemId = certificate.uniqueId;
 
         if (owners[itemId] != address(0)) {
