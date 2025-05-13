@@ -13,7 +13,6 @@ contract Ownership {
     mapping(string => IEri.UserProfile) private users;
     //link wallet address to username
     mapping(address => string) private usernames;
-
     //this links itemId to the address of the owner
     mapping(string => address) private owners;
     // this links a user address to the itemId to the Item
@@ -45,8 +44,6 @@ contract Ownership {
 
         emit ContractCreated(address(this), _owner);
     }
-
-
 
     modifier addressZeroCheck(address _user) {
         if (_user == address(0)) revert EriErrors.ADDRESS_ZERO(_user);
@@ -172,6 +169,9 @@ contract Ownership {
         return ownedItems._getItem(owners, itemId);
     }
 
+    //when ownership is to be verified, use can either input the itemId or scan the QR code
+    //if it's itemId that's input then the itemId is use
+    //if it's the QR code that's signed, uniqueId is extracted from the from the certificate and use in place of itemId
     function verifyOwnership(string memory itemId)
     external
     view

@@ -11,7 +11,6 @@ library OwnershipLib {
         address userAddress,
         string memory username
     ) external {
-
         if (bytes(username).length < 3) {
             revert EriErrors.USERNAME_MUST_BE_AT_LEAST_3_LETTERS();
         }
@@ -61,8 +60,8 @@ library OwnershipLib {
             revert EriErrors.NOT_REGISTERED(_caller);
         }
 
-        if (certificate.owner == address (0)) {
-            revert EriErrors.ADDRESS_ZERO(address (0));
+        if (certificate.owner == address(0)) {
+            revert EriErrors.ADDRESS_ZERO(address(0));
         }
 
         string memory itemId = certificate.uniqueId;
@@ -118,8 +117,8 @@ library OwnershipLib {
         for (uint256 i = 0; i < itemList.length; i++) {
             if (ownedItems[user][itemList[i].itemId].owner != address(0)) {
                 newItemList[validCount - 1] = ownedItems[user][
-                                    itemList[i].itemId
-                    ];
+                    itemList[i].itemId
+                ];
                 validCount--;
             }
         }
@@ -137,7 +136,6 @@ library OwnershipLib {
         address caller,
         address tempOwner
     ) external returns (bytes32) {
-
         if (tempOwner == caller) {
             revert EriErrors.CANNOT_GENERATE_CODE_FOR_YOURSELF(caller);
         }
@@ -158,9 +156,9 @@ library OwnershipLib {
         }
 
         // if you have already generated the code, you don't need to generate anymore (no need anymore)
-//        if (tempOwners[itemHash][tempOwner].owner != address(0)) {
-//            revert EriErrors.CODE_ALREADY_GENERATED();
-//        }
+        //        if (tempOwners[itemHash][tempOwner].owner != address(0)) {
+        //            revert EriErrors.CODE_ALREADY_GENERATED();
+        //        }
 
         tempOwners[itemHash][tempOwner] = _item;
         temp[itemHash] = tempOwner;
@@ -282,11 +280,11 @@ library OwnershipLib {
 
         return
             IEri.Owner({
-            name: _item.name,
-            itemId: _item.itemId,
-            username: usernames[_item.owner],
-            owner: _item.owner
-        });
+                name: _item.name,
+                itemId: _item.itemId,
+                username: usernames[_item.owner],
+                owner: _item.owner
+            });
     }
 
     function _isOwner(

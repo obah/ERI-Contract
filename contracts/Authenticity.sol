@@ -12,7 +12,7 @@ contract Authenticity is EIP712 {
     string private constant SIGNATURE_VERSION = "1";
 
     bytes32 private constant CERTIFICATE_TYPE_HASH =
-    keccak256(
+    keccak256( //this will be made immutable and be the hash will be set in the constructor
         "Certificate(string name,string uniqueId,string serial,uint256 date,address owner,string[] metadata)"
     );
 

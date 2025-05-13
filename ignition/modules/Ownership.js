@@ -3,9 +3,9 @@
 
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 
-module.exports = buildModule("OriginalityFactoryModule", (m) => {
+module.exports = buildModule("OwnershipModule", (m) => {
 
 
-  const originalityFactory = m.contract("Authenticity.sol"/*, ["0xF2E7E2f51D7C9eEa9B0313C2eCa12f8e43bd1855"]*/);
-  return { originalityFactory };
+  const ownership = m.contract("Ownership", ["0xF2E7E2f51D7C9eEa9B0313C2eCa12f8e43bd1855"]);
+  return { ownership };
 });

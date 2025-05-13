@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-verify");
 const {vars} = require("hardhat/config");
 
 /** @type import('hardhat/config').HardhatUserConfig */

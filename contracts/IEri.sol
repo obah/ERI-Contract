@@ -42,29 +42,5 @@ interface IEri {
         address owner;
     }
 
-    function ownerCreatedItem(
-        address _caller,
-        string memory itemId,
-        string memory name,
-        string[] memory metadata
-    ) external;
-
-    function getItem(string memory itemId)
-    external
-    view
-    returns (IEri.Item memory);
-
     function createItem(address _caller, IEri.Certificate memory certificate, string memory manufacturerName) external;
-
-    //========
-
-    function manufacturerGeneratesCode(string memory itemId)
-    external
-    returns (string memory);
-
-    function userClaimOwnershipForTheFirstTime(address _caller, string memory ownershipCode) external;
-
-    function setItemInOwnership(address user, IEri.Item memory item ) external;
-
-    function getOwner() external view returns (address);
 }
