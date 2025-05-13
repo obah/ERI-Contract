@@ -1,3 +1,4 @@
-pub(crate) mod certificate_service;
-pub(crate) mod app_state;
-pub(crate) mod app_router;
+pub(crate) mod other_tests;
+pub(crate) mod verify_authenticity;
+pub(crate) mod create_eip712;
+pub(crate) mod qr_code;

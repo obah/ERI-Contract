@@ -1,9 +1,7 @@
-use crate::server::server;
+use config::server::server;
 
 mod config;
 mod models;
-mod qr_code;
-mod server;
 mod services;
 mod utility;
 

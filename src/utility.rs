@@ -10,9 +10,3 @@ pub fn to_bytes(signature: Signature) -> Bytes {
 }
 
 // App state to hold the project state
-#[derive(Clone)]
-pub struct AppState {
-    pub eth_client: Arc<SignerMiddleware<Provider<Http>, LocalWallet>>,
-    pub originality_factory: Address,
-    pub wallet_address: Address,
-}

@@ -1,21 +1,30 @@
-use crate::services::certificate_service::{
-    __path_generate_signature, __path_manufacturer_registers, __path_verify_authenticity, __path_get_owner, __path_verify_signature,
-    __path_create_certificate
-};
+use crate::services::other_tests::{
+    __path_generate_signature, __path_manufacturer_registers, __path_get_owner, __path_verify_signature};
+use crate::services::verify_authenticity::__path_verify_authenticity;
+use crate::services::create_eip712::__path_create_certificate;
+use crate::services::qr_code::__path_generate_qr_code;
 use utoipa::OpenApi;
 use crate::models::certificate_model::{RegInput, SignedCertificate, CertificateData, Eip712Object};
 
 // Swagger/OpenAPI configuration
 #[derive(OpenApi)]
 #[openapi(
-    paths(verify_authenticity, generate_signature, manufacturer_registers, get_owner, verify_signature, create_certificate),
+    paths(
+        verify_authenticity,
+        generate_signature,
+        manufacturer_registers,
+        get_owner,
+        verify_signature,
+        create_certificate,
+        generate_qr_code
+    ),
     components(
         schemas(RegInput, CertificateData, SignedCertificate, Eip712Object),
         // responses(Item)
     ),
     tags(
         (name = "ERI", description = "Signature Verifying APIs")
-    ),    
+    ),
     info(
         title = "ERI APIs",
         description = "Signature Verifying Project on the Blockchain",

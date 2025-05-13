@@ -14,20 +14,20 @@ pub struct ManufacturerRegistered {
     pub manufacturer_address: Address,
 
     #[ethevent(indexed)]
-    pub manufacturer_contract: Address,
+    pub manufacturer_name: String,
 }
 
 impl ManufacturerRegistered {
     pub fn init() -> Self {
         Self {
             manufacturer_address: Address::zero(),
-            manufacturer_contract: Address::zero(),
+            manufacturer_name: String::new(),
         }
     }
-    pub fn new(manufacturer_address: Address, manufacturer_contract: Address) -> Self {
+    pub fn new(manufacturer_address: Address, manufacturer_name: String) -> Self {
         Self {
             manufacturer_address,
-            manufacturer_contract,
+            manufacturer_name,
         }
     }
 }

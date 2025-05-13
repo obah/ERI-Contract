@@ -1,5 +1,5 @@
+use crate::config::app_router::authenticity;
 use ethabi::ethereum_types::{Address, U256};
-use crate::services::certificate_service::{originality_factory};
 use ethers::contract::EthEvent;
 use ethers::types::transaction::eip712::{EIP712Domain, Eip712, Eip712Error};
 use ethers::utils::keccak256;
@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::env;
 use utoipa::ToSchema;
+use validator::{Validate, ValidationError};
 
 // Certificate struct for EIP-712
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -21,12 +22,13 @@ pub struct Certificate {
 
 // EIP-712 implementation
 impl Eip712 for Certificate {
-
     type Error = Eip712Error;
 
     fn domain_separator(&self) -> Result<[u8; 32], Self::Error> {
         let domain = self.domain()?;
-        let type_hash = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+        let type_hash = keccak256(
+            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
+        );
 
         let name_hash = keccak256(domain.name.unwrap_or_default().as_bytes());
         let version_hash = keccak256(domain.version.unwrap_or_default().as_bytes());
@@ -59,13 +61,11 @@ impl Eip712 for Certificate {
         })
     }
 
-
     fn type_hash() -> Result<[u8; 32], Self::Error> {
         Ok(keccak256(
             "Certificate(string name,string uniqueId,string serial,uint256 date,address owner,string[] metadata)",
         ))
     }
-
 
     fn struct_hash(&self) -> Result<[u8; 32], Self::Error> {
         let metadata_bytes = ethers::abi::encode(&[ethers::abi::Token::Array(
@@ -101,19 +101,41 @@ impl Eip712 for Certificate {
     }
 }
 
-// Certificate DTO from frontend
-#[derive(Clone, Serialize, Deserialize, Debug, ToSchema)]
+#[derive(Clone, Serialize, Deserialize, Debug, ToSchema, Validate)]
 pub struct SignedCertificate {
+    #[validate(length(min = 1))]
     pub name: String,
+    #[validate(length(min = 1))]
     pub unique_id: String,
+    #[validate(length(min = 1))]
     pub serial: String,
     pub date: u64,
+    #[validate(custom(function = "validate_address"))]
     #[schema(value_type = String, format = Binary)]
-    pub owner: String,
+    pub owner: String, 
+    #[validate(length(min = 1))]
     pub metadata: Vec<String>,
+    #[validate(custom(function = "validate_signature"))]
     #[schema(value_type = String, format = Binary)]
-    pub signature: String, // Hex-encoded signature
+    pub signature: String,
 }
+
+fn validate_address(address: &String) -> Result<(), ValidationError> {
+    if !address.starts_with("0x") || address.len() != 42 || hex::decode(&address[2..]).is_err() {
+        return Err(ValidationError::new("Invalid Ethereum address"));
+    }
+    Ok(())
+}
+fn validate_signature(signature: &String) -> Result<(), ValidationError> {
+    if !signature.starts_with("0x")
+        || (signature.len() != 130 && signature.len() != 132)
+        || hex::decode(&signature[2..]).is_err()
+    {
+        return Err(ValidationError::new("Invalid signature"));
+    }
+    Ok(())
+}
+
 impl TryFrom<SignedCertificate> for Certificate {
     type Error = anyhow::Error;
     fn try_from(dto: SignedCertificate) -> Result<Self, Self::Error> {
@@ -131,8 +153,7 @@ impl TryFrom<SignedCertificate> for Certificate {
     }
 }
 
-// Convert Certificate to contract Certificate
-impl From<Certificate> for originality_factory::Certificate {
+impl From<Certificate> for authenticity::Certificate {
     fn from(cert: Certificate) -> Self {
         Self {
             name: cert.name,
@@ -144,44 +165,6 @@ impl From<Certificate> for originality_factory::Certificate {
         }
     }
 }
-
-//============ FOR TEST PURPOSES ALONE =======================
-#[derive(Clone, Serialize, Deserialize, Debug, ToSchema)]
-pub struct CertificateData {
-    pub name: String,
-    pub unique_id: String,
-    pub serial: String,
-    pub date: u64,
-    #[schema(value_type = String, format = Binary)]
-    pub owner: String,
-    pub metadata: Vec<String>,
-}
-
-impl TryFrom<CertificateData> for Certificate {
-    type Error = anyhow::Error;
-    fn try_from(dto: CertificateData) -> Result<Self, Self::Error> {
-        Ok(Certificate {
-            name: dto.name,
-            unique_id: dto.unique_id,
-            serial: dto.serial,
-            date: U256::from(dto.date),
-            owner: dto
-                .owner
-                .parse()
-                .map_err(|_| anyhow::anyhow!("Invalid address format"))?,
-            metadata: dto.metadata,
-        })
-    }
-}
-
-
-//=============
-
-#[derive(Clone, Serialize, Deserialize, Debug, ToSchema)]
-pub struct RegInput {
-    pub name: String,
-}
-
 
 // Custom EIP712Domain for ToSchema
 #[derive(Clone, Serialize, Deserialize, Debug, ToSchema)]
@@ -213,7 +196,6 @@ impl From<EIP712Domain> for CustomEIP712Domain {
     }
 }
 
-
 // EIP-712 object for frontend signing
 #[derive(Clone, Serialize, Deserialize, Debug, ToSchema)]
 pub struct Eip712Object {
@@ -221,3 +203,37 @@ pub struct Eip712Object {
     pub types: serde_json::Value,
     pub value: serde_json::Value,
 }
+
+#[derive(Clone, Serialize, Deserialize, Debug, ToSchema)]
+pub struct CertificateData {
+    pub name: String,
+    pub unique_id: String,
+    pub serial: String,
+    pub date: u64,
+    #[schema(value_type = String, format = Binary)]
+    pub owner: String,
+    pub metadata: Vec<String>,
+}
+
+impl TryFrom<CertificateData> for Certificate {
+    type Error = anyhow::Error;
+    fn try_from(dto: CertificateData) -> Result<Self, Self::Error> {
+        Ok(Certificate {
+            name: dto.name,
+            unique_id: dto.unique_id,
+            serial: dto.serial,
+            date: U256::from(dto.date),
+            owner: dto
+                .owner
+                .parse()
+                .map_err(|_| anyhow::anyhow!("Invalid address format"))?,
+            metadata: dto.metadata,
+        })
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug, ToSchema)]
+pub struct RegInput {
+    pub name: String,
+}
+

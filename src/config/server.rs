@@ -3,8 +3,8 @@ use axum::Router;
 use anyhow::Result;
 use dotenv::dotenv;
 use crate::models::router_path::RouterPath;
-use crate::services::app_router::paths;
-use crate::services::app_state::init_app_state;
+use crate::config::app_router::paths;
+use crate::config::app_state::{AppState};
 
 pub async fn server() -> Result<()> {
     eprintln!("PROJECT STARTING...");
@@ -12,7 +12,7 @@ pub async fn server() -> Result<()> {
     dotenv().ok();
     // dotenv::from_path("../.env").ok();
 
-    let state = init_app_state().await?;
+    let state = AppState::init_app_state().await?; //init_app_state().await?;
 
     // Define routes
     let app: Router = paths(state, RouterPath::init());
