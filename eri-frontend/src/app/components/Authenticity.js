@@ -1,20 +1,19 @@
-// src/app/components/VerifyCertificate.js
+// src/app/components/Authenticity.js
 "use client"; // Required for client-side interactivity in Next.js App Router
 
 import React, {useState, useEffect} from 'react';
-import {BigNumber, ethers} from 'ethers';
+import {ethers} from 'ethers';
 import axios from 'axios';
 
 import {toast, ToastContainer} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {signTypedData} from "../resources/typedData.js";
+import {parseError} from "../resources/error.js";
 
-// const AUTHENTICITY = '0x1160cCbfb67Ecf3b95B5547A635E88E36E2E23aD';
 const AUTHENTICITY = process.env.NEXT_PUBLIC_AUTHENTICITY;
 
-import {AUTHENTICITY_ABI} from '../resources/abi';
-
-export default function VerifyCertificate() {
+import {AUTHENTICITY_ABI} from '../resources/authenticity_abi';
+export default function Authenticity() {
 
     const [provider, setProvider] = useState(null);
     const [signer, setSigner] = useState(null);
@@ -28,11 +27,13 @@ export default function VerifyCertificate() {
     const [manufacturerDetails, setManufacturerDetails] = useState("");
     const [manufacturerAddress, setManufacturerAddress] = useState("");
     const [signatureResult, setSignatureResult] = useState("");
+    const [signature, setSignature] = useState("");
     const [certificate, setCertificate] = useState({
         name: "iPhone 12",
         uniqueId: "IMEI123",
         serial: "123456",
         date: "123456789",
+        owner: "0xF2E7E2f51D7C9eEa9B0313C2eCa12f8e43bd1855",
         metadata: "BLACK, 128GB",
     });
 
@@ -151,19 +152,14 @@ export default function VerifyCertificate() {
                 .map((item) => item.trim())
                 .filter(Boolean);
 
-
-            const metadataHash = ethers.keccak256(
-                ethers.AbiCoder.defaultAbiCoder().encode(["string[]"], [metadata])
-            );
-
             //the certificate that goes into the backend has unique_id
             const cert = {
                 name: certificate.name,
                 uniqueId: certificate.uniqueId,
                 serial: certificate.serial,
                 date: parseInt(certificate.date),
-                owner: account, //this owner should be made dynamic and not static like this
-                metadataHash: metadataHash,
+                owner: account,
+                metadataHash: ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["string[]"], [metadata])), //hash the metadata array
                 metadata: metadata
             };
 
@@ -174,7 +170,7 @@ export default function VerifyCertificate() {
 
 
             //todo: you could make the frontend build the certificate for you
-            const {domain, types, value} = signTypedData(cert, network.chainId);
+             const {domain, types, value} = signTypedData(cert, network.chainId);
 
             console.log("Typed Data: ", JSON.stringify({domain, types, value}, null, 2));
 
@@ -182,30 +178,25 @@ export default function VerifyCertificate() {
             //todo: you could get the backend build the certificate for you
             //backend takes unique_id instead of uniqueId
             // const certificateData = {
-            //     name: formData.name,
-            //     unique_id: formData.uniqueId,
-            //     serial: formData.serial,
-            //     date: parseInt(formData.date),
-            //     owner: account, //this owner should be made dynamic and not static like this
-            //     // metadataHash: metadataHash,
-            //     metadata: formData.metadata
+            //     name: certificate.name,
+            //     unique_id: certificate.uniqueId,
+            //     serial: certificate.serial,
+            //     date: parseInt(certificate.date),
+            //     owner: account,
+            //     metadata
             // };
             // const response = await axios.post('http://localhost:8080/create_certificate', certificateData);
             //
             // console.log("Backend Response: ", JSON.stringify(response.data, null, 2));
             //
             // const {domain, types, value} = response.data;
-            // const inSign = await signer.signTypedData(
-            //     typedData.domain,
-            //     typedData.types,
-            //     typedData.message
-            // );
 
             const inSign = await signer.signTypedData(
                 domain,
                 types,
                 value
             );
+            console.log("Signature: ", inSign);
 
             console.log("Account Address: ", account);
             console.log("Certificate Owner: ", cert.owner);
@@ -229,9 +220,11 @@ export default function VerifyCertificate() {
             const isValid = await rContract.verifySignature(cert, inSign);
 
             setSignatureResult(`Signature valid: ${isValid}`);
+            setSignature(inSign);
             toast.success(`Signature verification: ${isValid}`);
 
-            return {cert, inSign};
+            return {cert, inSign, isValid};
+
         } catch (error) {
             toast.error(`Error: ${parseError(error)}`);
         }
@@ -241,12 +234,33 @@ export default function VerifyCertificate() {
         e.preventDefault();
         if (!checkConnection() || !sContract) return;
         try {
-            const result = await verifySignature(e);
-            if (!result) throw new Error("Signature verification failed");
-            const {cert, signature} = result;
+
+
+            const metadata = certificate.metadata
+                .split(",")
+                .map((item) => item.trim())
+                .filter(Boolean);
+
+            //the certificate that goes into the backend has unique_id
+            const cert = {
+                name: certificate.name,
+                uniqueId: certificate.uniqueId,
+                serial: certificate.serial,
+                date: parseInt(certificate.date),
+                owner: certificate.owner,
+                metadataHash: ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["string[]"], [metadata])), //hash the metadata array
+                metadata: metadata
+            };
+
+            console.log("Cert", cert);
+
+
+
             const tx = await sContract.userClaimOwnership(cert, signature);
             await tx.wait();
+
             toast.success(`Item ${cert.uniqueId} claimed successfully`);
+
             setCertificate({
                 name: "",
                 uniqueId: "",
@@ -261,18 +275,6 @@ export default function VerifyCertificate() {
         }
     };
 
-
-    const parseError = (error) => {
-        const message = error.data?.message || error.message || "Unknown error";
-        if (message.includes("ADDRESS_ZERO")) return "Invalid address: zero address not allowed";
-        if (message.includes("ALREADY_REGISTERED")) return "Manufacturer already registered";
-        if (message.includes("INVALID_MANUFACTURER_NAME"))
-            return "Invalid manufacturer name (min 2 characters)";
-        if (message.includes("NAME_NOT_AVAILABLE")) return "Manufacturer name already taken";
-        if (message.includes("DOES_NOT_EXIST")) return "Manufacturer does not exist";
-        if (message.includes("INVALID_SIGNATURE")) return "Invalid signature";
-        return message;
-    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-100 to-teal-100">
@@ -502,8 +504,6 @@ export default function VerifyCertificate() {
             <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false}/>
         </div>
     );
-
-
 }
 
 

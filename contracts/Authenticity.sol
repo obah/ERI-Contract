@@ -10,13 +10,15 @@ contract Authenticity is EIP712 {
 
     using ECDSA for bytes32;
 
-    string private constant SIGNING_DOMAIN = "CertificateAuth";
-    string private constant SIGNATURE_VERSION = "1";
+//    string private constant SIGNING_DOMAIN = "CertificateAuth";
+//    string private constant SIGNATURE_VERSION = "1";
 
-    bytes32 private constant CERTIFICATE_TYPE_HASH =
-    keccak256( //this will be made immutable and be the hash will be set in the constructor
-        "Certificate(string name,string uniqueId,string serial,uint256 date,address owner,bytes32 metadata)"
-    );
+//    bytes32 private constant CERTIFICATE_TYPE_HASH =
+//    keccak256( //this will be made immutable and be the hash will be set in the constructor
+//        "Certificate(string name,string uniqueId,string serial,uint256 date,address owner,bytes32 metadataHash)"
+//    );
+
+    bytes32 private immutable CERTIFICATE_TYPE_HASH;
 
     IEri private immutable OWNERSHIP;
 
@@ -33,8 +35,16 @@ contract Authenticity is EIP712 {
         _;
     }
 
-    constructor (address ownershipAdd) EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION)  {
+    constructor (
+        address ownershipAdd,
+        string memory certificate,
+        string memory signingDomain,
+        string memory signatureVersion
+    ) EIP712(signingDomain, signatureVersion)  {
+
         OWNERSHIP = IEri(ownershipAdd);
+
+        CERTIFICATE_TYPE_HASH = keccak256(bytes(certificate));
     }
 
 
@@ -50,7 +60,7 @@ contract Authenticity is EIP712 {
             revert EriErrors.INVALID_MANUFACTURER_NAME(name);
         }
 
-        if (names[name] != address (0)) {
+        if (names[name] != address(0)) {
             revert EriErrors.NAME_NOT_AVAILABLE(name);
         }
 
@@ -67,14 +77,14 @@ contract Authenticity is EIP712 {
     function getManufacturerByName(string calldata manufacturerName) external view returns (address)  {
 
         address manufacturer = names[manufacturerName];
-        if (manufacturer == address (0)) {
+        if (manufacturer == address(0)) {
             revert EriErrors.DOES_NOT_EXIST();
         }
         return manufacturer;
     }
 
     function getManufacturer(address userAddress) external view returns (IEri.Manufacturer memory) {
-        if (manufacturers[userAddress].manufacturerAddress == address (0)) {
+        if (manufacturers[userAddress].manufacturerAddress == address(0)) {
             revert EriErrors.DOES_NOT_EXIST();
         }
         return manufacturers[userAddress];
@@ -124,7 +134,7 @@ contract Authenticity is EIP712 {
         return true;
     }
 
-    function hashTypedDataV4(bytes32 structHash) external view returns(bytes32) {
+    function hashTypedDataV4(bytes32 structHash) external view returns (bytes32) {
         return _hashTypedDataV4(structHash);
     }
 

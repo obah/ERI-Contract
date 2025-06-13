@@ -41,6 +41,7 @@ contract CreateItem is Test {
             serial: "SN7890",
             date: block.timestamp,
             owner: manufacturer,
+            metadataHash: keccak256(abi.encode(metadata)),
             metadata: metadata
         });
     }
@@ -92,7 +93,7 @@ contract CreateItem is Test {
     function testCannotHaveItemsWithSameItemID() public {
         registerUser(firstOwner, "alice");
         createItem(firstOwner, certificate);
-        vm.expectRevert(abi.encodeWithSelector(EriErrors.ITEM_BELONG_TO_ANOTHER.selector, "XM123456"));
+        vm.expectRevert(abi.encodeWithSelector(EriErrors.ITEM_CLAIMED_ALREADY.selector, "XM123456"));
         createItem(firstOwner, certificate); // Should revert
     }
 

@@ -7,6 +7,7 @@ use ethers::utils::keccak256;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::env;
+use ethabi::Bytes;
 use utoipa::ToSchema;
 use validator::{Validate, ValidationError};
 
@@ -55,8 +56,10 @@ impl Eip712 for Certificate {
         let chain_id = env::var("CHAIN_ID").unwrap().parse::<usize>().unwrap();
 
         Ok(EIP712Domain {
-            name: Some("CertificateAuth".to_string()),
-            version: Some("1".to_string()),
+            // name: Some("CertificateAuth".to_string()),
+            name: Some(env::var("SIGNING_DOMAIN").unwrap()),
+            // version: Some("1".to_string()),
+            version: Some(env::var("SIGNATURE_VERSION").unwrap()),
             chain_id: Some(U256::from(chain_id).into()),
             verifying_contract: Some(factory_address),
             salt: None,
@@ -64,8 +67,11 @@ impl Eip712 for Certificate {
     }
 
     fn type_hash() -> Result<[u8; 32], Self::Error> {
+        
+        // let certificate = env::var("CERTIFICATE").unwrap();
+        
         Ok(keccak256( //i will add it to the env file
-            "Certificate(string name,string uniqueId,string serial,uint256 date,address owner,bytes32 metadata)",
+                      env::var("CERTIFICATE").unwrap(),     //"Certificate(string name,string uniqueId,string serial,uint256 date,address owner,bytes32 metadataHash)",
         ))
     }
 

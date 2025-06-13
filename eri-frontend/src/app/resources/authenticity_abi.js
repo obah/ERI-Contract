@@ -5,6 +5,21 @@ export const AUTHENTICITY_ABI =  [
                 "internalType": "address",
                 "name": "ownershipAdd",
                 "type": "address"
+            },
+            {
+                "internalType": "string",
+                "name": "certificate",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "signingDomain",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "signatureVersion",
+                "type": "string"
             }
         ],
         "stateMutability": "nonpayable",

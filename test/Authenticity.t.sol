@@ -25,13 +25,17 @@ contract AuthenticityTest is Test {
     IEri.Certificate public certificate;
 
 
-
     function setUp() public {
 
         ownership = new Ownership(owner);
 
 
-        authenticity = new Authenticity(address(ownership));
+        authenticity = new Authenticity(
+            address(ownership),
+            "Certificate(string name,string uniqueId,string serial,uint256 date,address owner,bytes32 metadataHash)",
+            "CertificateAuth",
+            "1"
+        );
 
 
         string[] memory metadata = new string[](2);
@@ -44,6 +48,7 @@ contract AuthenticityTest is Test {
             serial: "SN7890",
             date: block.timestamp,
             owner: manufacturerWithKey,
+            metadataHash: keccak256(abi.encode(metadata)),
             metadata: metadata
         });
     }
@@ -68,7 +73,7 @@ contract AuthenticityTest is Test {
                 keccak256(bytes(cert.serial)),
                 cert.date,
                 cert.owner,
-                metadataHash
+                cert.metadata
             )
         );
 
@@ -81,10 +86,15 @@ contract AuthenticityTest is Test {
 
     function testConstructor() public {
         Ownership ownership = new Ownership(owner);
-        Authenticity newAuthenticity = new Authenticity(address(ownership));
+        Authenticity newAuthenticity = new Authenticity(
+            address(ownership),
+            "Certificate(string name,string uniqueId,string serial,uint256 date,address owner,bytes32 metadataHash)",
+            "CertificateAuth",
+            "1"
+        );
 
-        emit log_address(address (newAuthenticity));
-        emit log_address(address (ownership));
+        emit log_address(address(newAuthenticity));
+        emit log_address(address(ownership));
     }
 
     function testManufacturerRegisters() public {

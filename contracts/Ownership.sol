@@ -4,9 +4,12 @@ pragma solidity 0.8.29;
 import "./EriErrors.sol";
 import "./IEri.sol";
 import "contracts/OwnershipLib.sol";
+import {Authenticity} from "./Authenticity.sol";
 
 contract Ownership {
     using OwnershipLib for *;
+
+    address public AUTHENTICITY;
 
     address public immutable owner;
     // this links username to a user profile
@@ -37,7 +40,8 @@ contract Ownership {
     );
     event ItemCreated(string indexed itemId, address indexed owner);
     event OwnershipClaimed(address indexed newOwner, address indexed oldOwner);
-    event CodeRevoked(bytes32);
+    event CodeRevoked(bytes32 indexed itemHash);
+    event AuthenticitySet(address indexed authenticityAddress);
 
     constructor(address _owner) {
         owner = _owner;
@@ -56,13 +60,31 @@ contract Ownership {
         _;
     }
 
+    modifier onlyContractOwner() {
+        if (msg.sender != owner)
+            revert EriErrors.ONLY_OWNER(msg.sender);
+        _;
+    }
+
+    modifier isAuthenticitySet() {
+        if (AUTHENTICITY == address(0)) {
+            revert EriErrors.AUTHENTICITY_NOT_SET();
+        }
+        _;
+    }
+
+    function setAuthenticity(address authenticityAddress) external onlyContractOwner {
+        AUTHENTICITY = authenticityAddress;
+        emit AuthenticitySet(authenticityAddress);
+    }
+
     //on the frontend, when user wants to register, we check their address if they already have a basename,
     // if they have a basename, we save their basename as their username
     // if not, we suggest that they get a basename and register with a base name,
     // if not, we register them with their username
     function userRegisters(string calldata username)
     external
-    addressZeroCheck(msg.sender) {
+    addressZeroCheck(msg.sender) isAuthenticitySet {
         address userAddress = msg.sender;
         users._userRegisters(usernames, userAddress, username);
         emit UserRegistered(userAddress, username);
@@ -70,7 +92,7 @@ contract Ownership {
 
     function getUser(address userAddress)
     public
-    view
+    view isAuthenticitySet
     returns (IEri.UserProfile memory) {
         return users._getUser(usernames, userAddress);
     }
@@ -80,7 +102,12 @@ contract Ownership {
         address _caller,
         IEri.Certificate memory certificate,
         string memory manufacturerName
-    ) external addressZeroCheck(msg.sender) addressZeroCheck(_caller) {
+    ) external addressZeroCheck(msg.sender) addressZeroCheck(_caller) isAuthenticitySet {
+
+        if (msg.sender != AUTHENTICITY) { //Only Authenticity contract can call this function
+            revert EriErrors.UNAUTHORIZED(msg.sender);
+        }
+
         users._createItem(
             owners,
             ownedItems,
@@ -96,7 +123,7 @@ contract Ownership {
 
     function getAllItemsFor(address user)
     external
-    view
+    view isAuthenticitySet
     returns (IEri.Item[] memory) {
         return users._getAllItemsFor(usernames, ownedItems, myItems, user);
     }
@@ -116,6 +143,7 @@ contract Ownership {
     external
     addressZeroCheck(msg.sender) //make sure the caller is not address 0
     addressZeroCheck(tempOwner) // make sure the temp owner is not address 0
+    isAuthenticitySet
     onlyOwner(itemId) {
 
         bytes32 itemHash = users._generateChangeOfOwnershipCode(
@@ -132,6 +160,7 @@ contract Ownership {
 
     function newOwnerClaimOwnership(bytes32 itemHash)
     external
+    isAuthenticitySet
     addressZeroCheck(msg.sender) {
 
         address newOwner = msg.sender;
@@ -149,12 +178,13 @@ contract Ownership {
         emit OwnershipClaimed(newOwner, oldOwner);
     }
 
-    function getTempOwner(bytes32 itemHash) external view returns(address)  {
+    function getTempOwner(bytes32 itemHash) external view isAuthenticitySet returns (address)  {
         return temp[itemHash];
     }
 
     function ownerRevokeCode(bytes32 itemHash)
     external
+    isAuthenticitySet
     addressZeroCheck(msg.sender) {
         users._ownerRevokeCode(usernames, temp, tempOwners, msg.sender, itemHash);
         emit CodeRevoked(itemHash);
@@ -164,7 +194,7 @@ contract Ownership {
     //it will return the item and all of it's information, including the owner
     function getItem(string memory itemId)
     public
-    view
+    view isAuthenticitySet
     returns (IEri.Item memory) {
         return ownedItems._getItem(owners, itemId);
     }
@@ -174,14 +204,14 @@ contract Ownership {
     //if it's the QR code that's signed, uniqueId is extracted from the from the certificate and use in place of itemId
     function verifyOwnership(string memory itemId)
     external
-    view
+    view isAuthenticitySet
     returns (IEri.Owner memory) {
         return ownedItems._verifyOwnership(owners, usernames, itemId);
     }
 
     function isOwner(address user, string memory itemId)
     external
-    view
+    view isAuthenticitySet
     returns (bool) {
 
         return ownedItems._isOwner(user, itemId);

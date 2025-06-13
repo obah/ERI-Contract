@@ -57,7 +57,7 @@ pub async fn create_certificate(
             { "name": "serial", "type": "string" },
             { "name": "date", "type": "uint256" },
             { "name": "owner", "type": "address" },
-            { "name": "metadata", "type": "bytes32" }
+            { "name": "metadataHash", "type": "bytes32" }
         ]
     });
 
@@ -69,7 +69,7 @@ pub async fn create_certificate(
         "serial": certificate.serial,
         "date": certificate.date.to_string(),
         "owner": ToHexExt::encode_hex_upper_with_prefix(&certificate.owner),
-        "metadata": Bytes::from(metadata_hash.to_vec()),
+        "metadataHash": Bytes::from(metadata_hash.to_vec()),
     });
 
     let eip712_object = Eip712Object {

@@ -47,6 +47,7 @@ contract OwnershipTest is Test {
             serial: "SN7890",
             date: block.timestamp,
             owner: manufacturer,
+            metadataHash: keccak256(abi.encode(metadata)),
             metadata: metadata
         });
     }

@@ -67,7 +67,7 @@ library OwnershipLib {
         string memory itemId = certificate.uniqueId;
 
         if (owners[itemId] != address(0)) {
-            revert EriErrors.ITEM_BELONG_TO_ANOTHER(itemId);
+            revert EriErrors.ITEM_CLAIMED_ALREADY(itemId);
         }
 
         IEri.Item storage item = ownedItems[_caller][itemId];

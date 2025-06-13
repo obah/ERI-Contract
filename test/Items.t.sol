@@ -48,7 +48,8 @@ contract Items is Test {
             serial: "SN7890",
             date: block.timestamp,
             owner: manufacturer,
-            metadata: metadata
+            metadata: metadata,
+            metadataHash: keccak256(abi.encode(metadata))
         });
     }
 
