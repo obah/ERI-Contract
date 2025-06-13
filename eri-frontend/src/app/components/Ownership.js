@@ -21,6 +21,12 @@ export default function Ownership() {
     const [formVisible, setFormVisible] = useState("");
     const [username, setUsername] = useState("");
     const [queryAddress, setQueryAddress] = useState("");
+    const [queryItemHash, setQueryItemHash] = useState("");
+    const [owner, setOwner] = useState("");
+    const [userAddress, setUserAddress] = useState("");
+    const [authe, setAuthe] = useState("");
+    const [isOwn, setIsOwn] = useState("");
+    const [temOwner, setTemOwner] = useState("");
     const [queryItemId, setQueryItemId] = useState("");
     const [userDetails, setUserDetails] = useState("");
     const [itemDetails, setItemDetails] = useState("");
@@ -304,6 +310,95 @@ export default function Ownership() {
         }
     };
 
+    const getTempOwner = async (e) => {
+        e.preventDefault();
+        if (!checkConnection() || !rContract) return;
+        try {
+
+            if (!queryItemHash || !ethers.isBytesLike(queryItemHash)) {
+                throw new Error("Invalid Item Hash");
+            }
+
+            const tempOwner = await rContract.getTempOwner(queryItemHash);
+
+            setTemOwner(tempOwner)
+
+            toast.success(`Temp Owner: ${tempOwner}`);
+
+            setFormVisible("");
+        } catch (error) {
+            toast.error(`Error: ${parseError(error)}`);
+        }
+    };
+
+    const verifyOwnership = async (e) => {
+        e.preventDefault();
+        if (!checkConnection() || !rContract) return;
+        try {
+
+            if (!queryItemId) {
+                throw new Error("Invalid Item ID");
+            }
+
+            const own = await rContract.verifyOwnership(queryItemId);
+
+            setOwner(own)
+
+            toast.success(`${own.username} is the verified owner`);
+
+            setQueryItemId("");
+            setFormVisible("");
+        } catch (error) {
+            toast.error(`Error: ${parseError(error)}`);
+        }
+    };
+
+    const isOwner = async (e) => {
+        e.preventDefault();
+        if (!checkConnection() || !rContract) return;
+        try {
+
+            if (!queryItemId || !userAddress) {
+                throw new Error("Invalid parameters");
+            }
+
+            const isValid = await rContract.isOwner(userAddress, queryItemId);
+
+            setIsOwn(isValid)
+
+            toast.success(`Result: ${isValid}`);
+
+            setQueryItemId("");
+            setUserAddress("");
+            setFormVisible("");
+        } catch (error) {
+            toast.error(`Error: ${parseError(error)}`);
+        }
+    };
+
+    const setAuthenticity = async (e) => {
+        e.preventDefault();
+        if (!checkConnection() || !rContract) return;
+        try {
+
+            if (!authe || !ethers.isAddress(authe)) {
+                throw new Error("Invalid Authenticity Address");
+            }
+
+            const tx = await sContract.setAuthenticity(authe);
+
+           const receipt = await tx.wait();
+           const authenticityAddress = getEvents(sContract, receipt, "AuthenticitySet");
+
+            toast.success(`Authenticity Address: ${authenticityAddress}`);
+
+            setAuthe("");
+            setFormVisible("");
+        } catch (error) {
+            toast.error(`Error: ${parseError(error)}`);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-100 to-teal-100">
             <header className="p-4 bg-blue-600 text-white shadow-md">
@@ -348,6 +443,33 @@ export default function Ownership() {
                                     </form>
                                 )}
                             </div>
+
+                            <div>
+                                <button
+                                    onClick={() => setFormVisible(formVisible === "setAuth" ? "" : "setAuth")}
+                                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                                >
+                                    {formVisible === "setAuth" ? "Hide" : "Owner Set Authenticity"}
+                                </button>
+                                {formVisible === "setAuth" && (
+                                    <form onSubmit={setAuthenticity} className="space-y-4 mt-4">
+                                        <input
+                                            type="text"
+                                            placeholder="Authencity Address"
+                                            value={authe}
+                                            onChange={(e) => setAuthe(e.target.value)}
+                                            className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                                        >
+                                            Submit
+                                        </button>
+                                    </form>
+                                )}
+                            </div>
+
                             <div>
                                 <button
                                     onClick={() => setFormVisible(formVisible === "getUser" ? "" : "getUser")}
@@ -540,6 +662,98 @@ export default function Ownership() {
                                     </form>
                                 )}
                             </div>
+
+                            <div>
+                                <button
+                                    onClick={() => setFormVisible(formVisible === "isOwner" ? "" : "isOwner")}
+                                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                                >
+                                    {formVisible === "isOwner" ? "Hide" : "Is Owner"}
+                                </button>
+                                {formVisible === "isOwner" && (
+                                    <form onSubmit={isOwner} className="space-y-4 mt-4">
+                                        <input
+                                            type="text"
+                                            placeholder="Temporary Owner Address"
+                                            value={userAddress}
+                                            onChange={(e) => setUserAddress(e.target.value)}
+                                            className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Item ID"
+                                            value={queryItemId}
+                                            onChange={(e) => setQueryItemId(e.target.value)}
+                                            className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+
+                                        <button
+                                            type="submit"
+                                            className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                                        >
+                                            Submit
+                                        </button>
+                                        {isOwn && <p className="mt-2 text-gray-700">{isOwn}</p>}
+                                    </form>
+                                )}
+                            </div>
+
+                            <div>
+                                <button
+                                    onClick={() => setFormVisible(formVisible === "verify" ? "" : "verify")}
+                                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                                >
+                                    {formVisible === "verify" ? "Hide" : "Verify Ownership"}
+                                </button>
+                                {formVisible === "verify" && (
+                                    <form onSubmit={verifyOwnership} className="space-y-4 mt-4">
+                                        <input
+                                            type="text"
+                                            placeholder="Item ID"
+                                            value={queryItemId}
+                                            onChange={(e) => setQueryItemId(e.target.value)}
+                                            className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                                        >
+                                            Submit
+                                        </button>
+                                        {owner && <p className="mt-2 text-gray-700">{owner}</p>}
+                                    </form>
+                                )}
+                            </div>
+
+
+                            <div>
+                                <button
+                                    onClick={() => setFormVisible(formVisible === "tempOwner" ? "" : "tempOwner")}
+                                    className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                                >
+                                    {formVisible === "tempOwner" ? "Hide" : "Get Temp Owner"}
+                                </button>
+                                {formVisible === "tempOwner" && (
+                                    <form onSubmit={getTempOwner} className="space-y-4 mt-4">
+                                        <input
+                                            type="text"
+                                            placeholder="Item ID"
+                                            value={queryItemHash}
+                                            onChange={(e) => setQueryItemHash(e.target.value)}
+                                            className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                                        >
+                                            Submit
+                                        </button>
+                                        {temOwner && <p className="mt-2 text-gray-700">{temOwner}</p>}
+                                    </form>
+                                )}
+                            </div>
+
+
                             <div>
                                 <button
                                     onClick={() => setFormVisible(formVisible === "claimOwnership" ? "" : "claimOwnership")}

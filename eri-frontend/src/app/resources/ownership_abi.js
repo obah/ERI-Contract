@@ -22,6 +22,11 @@ export const OWNERSHIP_ABI = [
         "type": "error"
     },
     {
+        "inputs": [],
+        "name": "AUTHENTICITY_NOT_SET",
+        "type": "error"
+    },
+    {
         "inputs": [
             {
                 "internalType": "address",
@@ -33,12 +38,36 @@ export const OWNERSHIP_ABI = [
         "type": "error"
     },
     {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "name": "UNAUTHORIZED",
+        "type": "error"
+    },
+    {
         "anonymous": false,
         "inputs": [
             {
-                "indexed": false,
+                "indexed": true,
+                "internalType": "address",
+                "name": "authenticityAddress",
+                "type": "address"
+            }
+        ],
+        "name": "AuthenticitySet",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
                 "internalType": "bytes32",
-                "name": "",
+                "name": "itemHash",
                 "type": "bytes32"
             }
         ],
@@ -139,6 +168,19 @@ export const OWNERSHIP_ABI = [
         ],
         "name": "UserRegistered",
         "type": "event"
+    },
+    {
+        "inputs": [],
+        "name": "AUTHENTICITY",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
     },
     {
         "inputs": [
@@ -468,6 +510,19 @@ export const OWNERSHIP_ABI = [
             }
         ],
         "name": "ownerRevokeCode",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "authenticityAddress",
+                "type": "address"
+            }
+        ],
+        "name": "setAuthenticity",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
