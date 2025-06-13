@@ -22,6 +22,7 @@ interface IEri {
         string serial;
         uint256 date;
         address owner;
+        bytes32 metadataHash;
         string[] metadata;
     }
 

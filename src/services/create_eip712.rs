@@ -1,17 +1,13 @@
 use crate::models::certificate_model::{
     Certificate, CertificateData, CustomEIP712Domain, Eip712Object,
 };
-use axum::{http::StatusCode, Json};
+use crate::utility::to_meta_hash;
+use axum::{Json, http::StatusCode};
 use ethers::types::transaction::eip712::Eip712;
 use ethers::utils::hex::ToHexExt;
-use ethers::{
-    contract::EthEvent,
-    prelude::*,
-    signers::Signer
-    ,
-};
+use ethers::utils::keccak256;
+use ethers::{contract::EthEvent, prelude::*, signers::Signer};
 use std::error::Error;
-
 
 #[utoipa::path(
     post,
@@ -61,10 +57,11 @@ pub async fn create_certificate(
             { "name": "serial", "type": "string" },
             { "name": "date", "type": "uint256" },
             { "name": "owner", "type": "address" },
-            { "name": "metadata", "type": "string[]" }
+            { "name": "metadata", "type": "bytes32" }
         ]
     });
 
+    let metadata_hash = to_meta_hash(&certificate.metadata);
     // Create EIP-712 value
     let value = serde_json::json!({
         "name": certificate.name,
@@ -72,7 +69,7 @@ pub async fn create_certificate(
         "serial": certificate.serial,
         "date": certificate.date.to_string(),
         "owner": ToHexExt::encode_hex_upper_with_prefix(&certificate.owner),
-        "metadata": certificate.metadata
+        "metadata": Bytes::from(metadata_hash.to_vec()),
     });
 
     let eip712_object = Eip712Object {

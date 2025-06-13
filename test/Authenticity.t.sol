@@ -224,3 +224,5 @@ contract AuthenticityTest is Test {
         authenticity.userClaimOwnership(certificate, signature);
     }
 }
+
+//forge test --match-path test/Authenticity.t.sol --match-test testManufacturerRegistersZeroAddress -vvv

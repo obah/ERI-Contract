@@ -3,17 +3,19 @@ pragma solidity ^0.8.29;
 
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "contracts/EriErrors.sol";
-import "contracts/IEri.sol";
+import "./EriErrors.sol";
+import "./IEri.sol";
 
 contract Authenticity is EIP712 {
+
+    using ECDSA for bytes32;
 
     string private constant SIGNING_DOMAIN = "CertificateAuth";
     string private constant SIGNATURE_VERSION = "1";
 
     bytes32 private constant CERTIFICATE_TYPE_HASH =
     keccak256( //this will be made immutable and be the hash will be set in the constructor
-        "Certificate(string name,string uniqueId,string serial,uint256 date,address owner,string[] metadata)"
+        "Certificate(string name,string uniqueId,string serial,uint256 date,address owner,bytes32 metadata)"
     );
 
     IEri private immutable OWNERSHIP;
@@ -90,13 +92,12 @@ contract Authenticity is EIP712 {
         return manufacturer;
     }
 
-    //this would have made sense in the Originality contract but EIP-712 makes it complicated. this is the easy route
     function verifySignature(
         IEri.Certificate memory certificate,
         bytes memory signature
     ) public view returns (bool)  {
 
-        bytes32 metadataHash = keccak256(abi.encode(certificate.metadata));
+        // bytes32 metadataHash = keccak256(abi.encode(certificate.metadata));
         bytes32 structHash = keccak256(
             abi.encode(
                 CERTIFICATE_TYPE_HASH,
@@ -105,12 +106,12 @@ contract Authenticity is EIP712 {
                 keccak256(bytes(certificate.serial)),
                 certificate.date,
                 certificate.owner,
-                metadataHash
+                certificate.metadataHash
             )
         );
 
         bytes32 digest = _hashTypedDataV4(structHash);
-        address signer = ECDSA.recover(digest, signature);
+        address signer = digest.recover(signature);
 
         //very important, to make sure the owner is genuine and valid
         address manufacturer = getManufacturerAddress(certificate.owner);

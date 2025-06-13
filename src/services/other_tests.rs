@@ -118,6 +118,7 @@ pub async fn verify_signature(
     State(state): State<AppState>,
     Json(cert): Json<CertificateData>,
 ) -> anyhow::Result<Json<String>, StatusCode> {
+
     let certificate: Certificate = cert
         .clone()
         .try_into()
@@ -145,9 +146,13 @@ pub async fn verify_signature(
     let contract = Authenticity::new(state.authenticity_contract, state.eth_client.clone());
 
     eprintln!("Address: {:?}", state.eth_client.signer().address());
+    let bytes_sign = Bytes::from(signature.to_vec());
+
+    eprintln!("Bytes Signature: {:?}", bytes_sign);
+    eprintln!("Certificate: {:?}", contract_cert);
 
     let result = contract
-        .verify_signature(contract_cert, Bytes::from(signature.to_vec()))
+        .verify_signature(contract_cert, bytes_sign)
         .call()
         .await
         .map_err(|e| {

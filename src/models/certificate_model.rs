@@ -1,4 +1,5 @@
 use crate::config::app_router::authenticity;
+use crate::utility::to_meta_hash;
 use ethabi::ethereum_types::{Address, U256};
 use ethers::contract::EthEvent;
 use ethers::types::transaction::eip712::{EIP712Domain, Eip712, Eip712Error};
@@ -17,6 +18,7 @@ pub struct Certificate {
     pub serial: String,
     pub date: U256,
     pub owner: Address,
+    pub metadata_hash: [u8; 32],
     pub metadata: Vec<String>,
 }
 
@@ -62,19 +64,12 @@ impl Eip712 for Certificate {
     }
 
     fn type_hash() -> Result<[u8; 32], Self::Error> {
-        Ok(keccak256(
-            "Certificate(string name,string uniqueId,string serial,uint256 date,address owner,string[] metadata)",
+        Ok(keccak256( //i will add it to the env file
+            "Certificate(string name,string uniqueId,string serial,uint256 date,address owner,bytes32 metadata)",
         ))
     }
 
     fn struct_hash(&self) -> Result<[u8; 32], Self::Error> {
-        let metadata_bytes = ethers::abi::encode(&[ethers::abi::Token::Array(
-            self.metadata
-                .iter()
-                .map(|s| ethers::abi::Token::String(s.clone()))
-                .collect(),
-        )]);
-        let metadata_hash = keccak256(&metadata_bytes);
 
         let encoded = ethers::abi::encode(&[
             ethers::abi::Token::FixedBytes(Self::type_hash()?.to_vec()),
@@ -83,8 +78,9 @@ impl Eip712 for Certificate {
             ethers::abi::Token::FixedBytes(keccak256(self.serial.as_bytes()).to_vec()),
             ethers::abi::Token::Uint(self.date),
             ethers::abi::Token::Address(self.owner),
-            ethers::abi::Token::FixedBytes(metadata_hash.to_vec()),
+            ethers::abi::Token::FixedBytes(self.metadata_hash.to_vec()),
         ]);
+        
         Ok(keccak256(&encoded))
     }
 
@@ -139,6 +135,7 @@ fn validate_signature(signature: &String) -> Result<(), ValidationError> {
 impl TryFrom<SignedCertificate> for Certificate {
     type Error = anyhow::Error;
     fn try_from(dto: SignedCertificate) -> Result<Self, Self::Error> {
+        
         Ok(Certificate {
             name: dto.name,
             unique_id: dto.unique_id,
@@ -148,6 +145,7 @@ impl TryFrom<SignedCertificate> for Certificate {
                 .owner
                 .parse()
                 .map_err(|_| anyhow::anyhow!("Invalid address format"))?,
+            metadata_hash: to_meta_hash(&dto.metadata),
             metadata: dto.metadata,
         })
     }
@@ -155,6 +153,7 @@ impl TryFrom<SignedCertificate> for Certificate {
 
 impl From<Certificate> for authenticity::Certificate {
     fn from(cert: Certificate) -> Self {
+        
         Self {
             name: cert.name,
             unique_id: cert.unique_id,
@@ -162,6 +161,7 @@ impl From<Certificate> for authenticity::Certificate {
             date: cert.date,
             owner: cert.owner,
             metadata: cert.metadata,
+            metadata_hash: cert.metadata_hash
         }
     }
 }
@@ -218,6 +218,7 @@ pub struct CertificateData {
 impl TryFrom<CertificateData> for Certificate {
     type Error = anyhow::Error;
     fn try_from(dto: CertificateData) -> Result<Self, Self::Error> {
+        
         Ok(Certificate {
             name: dto.name,
             unique_id: dto.unique_id,
@@ -227,6 +228,7 @@ impl TryFrom<CertificateData> for Certificate {
                 .owner
                 .parse()
                 .map_err(|_| anyhow::anyhow!("Invalid address format"))?,
+            metadata_hash: to_meta_hash(&dto.metadata),
             metadata: dto.metadata,
         })
     }
