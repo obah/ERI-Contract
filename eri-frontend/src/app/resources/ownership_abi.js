@@ -170,19 +170,6 @@ export const OWNERSHIP_ABI = [
         "type": "event"
     },
     {
-        "inputs": [],
-        "name": "AUTHENTICITY",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
         "inputs": [
             {
                 "internalType": "address",
@@ -261,14 +248,8 @@ export const OWNERSHIP_ABI = [
         "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "user",
-                "type": "address"
-            }
-        ],
-        "name": "getAllItemsFor",
+        "inputs": [],
+        "name": "getAllMyItems",
         "outputs": [
             {
                 "components": [
@@ -486,19 +467,6 @@ export const OWNERSHIP_ABI = [
         "name": "newOwnerClaimOwnership",
         "outputs": [],
         "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "owner",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
         "type": "function"
     },
     {

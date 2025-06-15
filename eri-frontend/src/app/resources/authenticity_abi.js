@@ -1,4 +1,4 @@
-export const AUTHENTICITY_ABI =  [
+export const AUTHENTICITY_ABI = [
     {
         "inputs": [
             {
@@ -121,6 +121,25 @@ export const AUTHENTICITY_ABI =  [
         ],
         "name": "StringTooLong",
         "type": "error"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "contractAddress",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            }
+        ],
+        "name": "ContractCreated",
+        "type": "event"
     },
     {
         "anonymous": false,
@@ -294,25 +313,56 @@ export const AUTHENTICITY_ABI =  [
     {
         "inputs": [
             {
-                "internalType": "address",
-                "name": "manufacturer",
-                "type": "address"
-            }
-        ],
-        "name": "manufacturers",
-        "outputs": [
-            {
-                "internalType": "string",
-                "name": "name",
-                "type": "string"
+                "components": [
+                    {
+                        "internalType": "string",
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "uniqueId",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "serial",
+                        "type": "string"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "date",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "owner",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "bytes32",
+                        "name": "metadataHash",
+                        "type": "bytes32"
+                    },
+                    {
+                        "internalType": "string[]",
+                        "name": "metadata",
+                        "type": "string[]"
+                    }
+                ],
+                "internalType": "struct IEri.Certificate",
+                "name": "certificate",
+                "type": "tuple"
             },
             {
-                "internalType": "address",
-                "name": "manufacturerAddress",
-                "type": "address"
+                "internalType": "bytes",
+                "name": "signature",
+                "type": "bytes"
             }
         ],
-        "stateMutability": "view",
+        "name": "userClaimOwnership",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -365,9 +415,20 @@ export const AUTHENTICITY_ABI =  [
                 "type": "bytes"
             }
         ],
-        "name": "userClaimOwnership",
-        "outputs": [],
-        "stateMutability": "nonpayable",
+        "name": "verifyAuthenticity",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            },
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {

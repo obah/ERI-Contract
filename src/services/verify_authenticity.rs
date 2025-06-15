@@ -12,7 +12,7 @@ use ethers::{
 };
 use std::error::Error;
 use validator::Validate;
-use crate::config::app_router::Authenticity;
+use crate::config::app_router::{authenticity, Authenticity};
 
 
 #[utoipa::path(
@@ -28,7 +28,7 @@ use crate::config::app_router::Authenticity;
 pub async fn verify_authenticity(
     State(state): State<AppState>,
     Json(cert): Json<SignedCertificate>,
-) -> Result<Json<String>, StatusCode> {
+) -> Result<Json<(String, String)>, StatusCode> {
     let certificate: Certificate = cert
         .clone()
         .try_into()
@@ -76,25 +76,30 @@ pub async fn verify_authenticity(
     // Fetch the contract's owner
     let contract = Authenticity::new(state.authenticity_contract, state.eth_client.clone());
 
-    let manufacturer_address = contract
-        .get_manufacturer_address(signer)
+    let manufacturer: authenticity::Manufacturer = contract
+        .get_manufacturer(signer)
         .call()
         .await
         .map_err(|e| {
             eprintln!("Contract call error: {:?}", e.to_string());
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
-    eprintln!("Manufacturer Address: {:?}", manufacturer_address);
+
+    eprintln!("Manufacturer Address: {:?}", manufacturer.manufacturer_address);
     // Verify the signer matches the owner
-    if signer == manufacturer_address {
-        Ok(Json(format!(
-            "Signature is valid! Signed by owner: {:?}",
-            signer
-        )))
+    if signer == manufacturer.manufacturer_address {
+        Ok(Json((manufacturer.manufacturer_address.to_string(), manufacturer.name)))
+        //     format!(
+        //     "Signature is valid! Signed by owner: {:?}",
+        //     signer
+        // ))
+        // )
     } else {
-        Ok(Json(format!(
-            "Signature is invalid. Recovered signer: {:?}, expected owner: {:?}",
-            signer, manufacturer_address
-        )))
+        Ok(Json( (signer.to_string(), manufacturer.name) ))
+        //     format!(
+        //     "Signature is invalid. Recovered signer: {:?}, expected owner: {:?}",
+        //     signer, manufacturer.manufacturer_address
+        // ))
+        // )
     }
 }

@@ -41,14 +41,14 @@ main().catch((error) => {
     process.exitCode = 1;
 });
 
-// 📚 OwnershipLib deployed at:0x1684d002f846febCd6A21DB15C71642532a4edAf
+// 📚 OwnershipLib deployed at: 0x3fB3BCdd95271Fc8b7ebFF48d4d7541b982355ef
 // https://sepolia.basescan.org/address/0x1684d002f846febCd6A21DB15C71642532a4edAf#code
 
 
-// 📦 Ownership deployed at: 0x184ecbE6d79710215c9C8Ce0757875714D78d96c
+// 📦 Ownership deployed at: 0x49e8207450dd0204Bb6a89A9edf7CE151cE58BBc
 // https://sepolia.basescan.org/address/0x184ecbE6d79710215c9C8Ce0757875714D78d96c#code
 
-// 🧾 Authenticity deployed at: 0x8C3F22cAf6fA0879c04889D6fb5e38747c0f75FC
+// 🧾 Authenticity deployed at: 0x98BC72046616b528D4Bc5bbcC7d99f82237A8B55
 // https://sepolia.basescan.org/address/0x8C3F22cAf6fA0879c04889D6fb5e38747c0f75FC#code
 
 // to verify a contract, you need the contract address and also the constructor parameters

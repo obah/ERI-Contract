@@ -7,7 +7,6 @@ import "./EriErrors.sol";
 import "./IEri.sol";
 
 contract Authenticity is EIP712 {
-
     using ECDSA for bytes32;
 
 //    string private constant SIGNING_DOMAIN = "CertificateAuth";
@@ -22,13 +21,11 @@ contract Authenticity is EIP712 {
 
     IEri private immutable OWNERSHIP;
 
-    mapping(address manufacturer => IEri.Manufacturer) public manufacturers;
+    mapping(address manufacturer => IEri.Manufacturer) private manufacturers;
     mapping(string manufacturerName => address registeredAddress) private names;
 
-    event ManufacturerRegistered(
-        address indexed manufacturerAddress,
-        string indexed manufacturerName
-    );
+    event ManufacturerRegistered(address indexed manufacturerAddress, string indexed manufacturerName);
+    event ContractCreated(address indexed contractAddress, address indexed owner);
 
     modifier addressZeroCheck(address _user) {
         if (_user == address(0)) revert EriErrors.ADDRESS_ZERO(_user);
@@ -45,6 +42,7 @@ contract Authenticity is EIP712 {
         OWNERSHIP = IEri(ownershipAdd);
 
         CERTIFICATE_TYPE_HASH = keccak256(bytes(certificate));
+        emit ContractCreated(address(this), msg.sender);
     }
 
 
@@ -152,9 +150,21 @@ contract Authenticity is EIP712 {
         OWNERSHIP.createItem(msg.sender, certificate, manufacturerName);
     }
 
-    function isRegistered(
-        address user
-    ) internal view returns (bool) {
+    function verifyAuthenticity(IEri.Certificate memory certificate, bytes memory signature) external view returns (bool, string memory) {
+        //first check the authenticity of the signature
+        bool isValid = verifySignature(certificate, signature);
+
+        //by design, this cannot be false because instead of false, it reverts but in case
+        if (!isValid) {
+            revert EriErrors.INVALID_SIGNATURE();
+        }
+
+        string memory manufacturerName = manufacturers[certificate.owner].name;
+
+        return (isValid, manufacturerName);
+    }
+
+    function isRegistered(address user) internal view returns (bool) {
         return manufacturers[user].manufacturerAddress != address(0);
     }
 }

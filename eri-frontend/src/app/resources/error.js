@@ -3,7 +3,7 @@
  * @param {Error | ethers.ContractError} error - The error object to parse
  * @returns {string} Human-readable error message
  */
-export const parseError = (error) => {
+const parseError = (error) => {
     // Extract message with fallbacks
     const message = (
         error.data?.message ||
@@ -65,3 +65,9 @@ export const parseError = (error) => {
         .replace('error:', '')
         .trim() || "An unknown error occurred";
 };
+
+function addressZero() {
+    return "0x0000000000000000000000000000000000000000";
+}
+
+export {addressZero, parseError}

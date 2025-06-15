@@ -87,6 +87,8 @@ library OwnershipLib {
         itemList.push(item);
     }
 
+    //for privacy purpose, we want to make sure only the owner
+    // of the items can fetch all his items, not everybody
     function _getAllItemsFor(
         mapping(string => IEri.UserProfile) storage users,
         mapping(address => string) storage usernames,

@@ -4,7 +4,7 @@ import React, {useState, useEffect} from "react";
 import {ethers} from "ethers";
 import {toast, ToastContainer} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {parseError} from "../resources/error.js";
+import {addressZero, parseError} from "../resources/error.js";
 import {getEvents} from "../resources/getEvents.js";
 import {OWNERSHIP_ABI} from "../resources/ownership_abi.js";
 
@@ -194,10 +194,11 @@ export default function Ownership() {
 
     const getAllItems = async (e) => {
         e.preventDefault();
-        if (!checkConnection() || !rContract) return;
+        if (!checkConnection() || !sContract) return;
         try {
-            if (!ethers.isAddress(queryAddress)) throw new Error("Valid address required");
-            const items = await rContract.getAllItemsFor(queryAddress);
+            // if (!ethers.isAddress(queryAddress)) throw new Error("Valid address required");
+
+            const items = await sContract.getAllMyItems();
             setItemsList(
                 items.map((item) => ({
                     itemId: item.itemId,
@@ -321,6 +322,10 @@ export default function Ownership() {
 
             const tempOwner = await rContract.getTempOwner(queryItemHash);
 
+            if (tempOwner === addressZero()) {
+                throw new Error("No Temp Owner found!")
+            }
+
             setTemOwner(tempOwner)
 
             toast.success(`Temp Owner: ${tempOwner}`);
@@ -341,6 +346,13 @@ export default function Ownership() {
             }
 
             const own = await rContract.verifyOwnership(queryItemId);
+
+            // const owne = JSON.stringify({
+            //     name: own.name,
+            //     id: own.itemId, // something very unique like the IMEI of a phone
+            //     ownerName: own.username,
+            //     ownerAddr: own.owner
+            // });
 
             setOwner(own)
 
@@ -364,7 +376,7 @@ export default function Ownership() {
 
             const isValid = await rContract.isOwner(userAddress, queryItemId);
 
-            setIsOwn(isValid)
+            setIsOwn(`Result: ${isValid}`)
 
             toast.success(`Result: ${isValid}`);
 
@@ -387,8 +399,8 @@ export default function Ownership() {
 
             const tx = await sContract.setAuthenticity(authe);
 
-           const receipt = await tx.wait();
-           const authenticityAddress = getEvents(sContract, receipt, "AuthenticitySet");
+            const receipt = await tx.wait();
+            const authenticityAddress = getEvents(sContract, receipt, "AuthenticitySet");
 
             toast.success(`Authenticity Address: ${authenticityAddress}`);
 
@@ -571,13 +583,13 @@ export default function Ownership() {
                                 </button>
                                 {formVisible === "getItems" && (
                                     <form onSubmit={getAllItems} className="space-y-4 mt-4">
-                                        <input
-                                            type="text"
-                                            placeholder="User Address"
-                                            value={queryAddress}
-                                            onChange={(e) => setQueryAddress(e.target.value)}
-                                            className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
+                                        {/*<input*/}
+                                        {/*    type="text"*/}
+                                        {/*    placeholder="User Address"*/}
+                                        {/*    value={queryAddress}*/}
+                                        {/*    onChange={(e) => setQueryAddress(e.target.value)}*/}
+                                        {/*    className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"*/}
+                                        {/*/>*/}
                                         <button
                                             type="submit"
                                             className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
@@ -588,8 +600,10 @@ export default function Ownership() {
                                             <ul className="mt-2 text-gray-700">
                                                 {itemsList.map((item, index) => (
                                                     <li key={index}>
-                                                        ID: {item.itemId}, Name: {item.name}, Date: {item.date},
-                                                        Metadata: {item.metadata}
+                                                        <p>ID: {item.itemId},</p>
+                                                        <p>Name: {item.name},</p>
+                                                        <p> Date: {item.date},</p>
+                                                        <p> Metadata: {item.metadata}</p>
                                                     </li>
                                                 ))}
                                             </ul>
@@ -674,7 +688,7 @@ export default function Ownership() {
                                     <form onSubmit={isOwner} className="space-y-4 mt-4">
                                         <input
                                             type="text"
-                                            placeholder="Temporary Owner Address"
+                                            placeholder="Owner Address"
                                             value={userAddress}
                                             onChange={(e) => setUserAddress(e.target.value)}
                                             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -720,7 +734,18 @@ export default function Ownership() {
                                         >
                                             Submit
                                         </button>
-                                        {owner && <p className="mt-2 text-gray-700">{owner}</p>}
+                                        {owner && (
+                                            <ul className="mt-2 text-gray-700">
+                                                {
+                                                    <li>
+                                                        <p> Item Name: {owner.name},</p>
+                                                        <p>Item ID: {owner.itemId},</p>
+                                                        <p>Owner Name: {owner.username},</p>
+                                                        <p>Owner Address: {owner.owner}</p>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        )}
                                     </form>
                                 )}
                             </div>
@@ -737,7 +762,7 @@ export default function Ownership() {
                                     <form onSubmit={getTempOwner} className="space-y-4 mt-4">
                                         <input
                                             type="text"
-                                            placeholder="Item ID"
+                                            placeholder="Ownership Code (bytes32)"
                                             value={queryItemHash}
                                             onChange={(e) => setQueryItemHash(e.target.value)}
                                             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"

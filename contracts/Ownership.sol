@@ -9,9 +9,9 @@ import {Authenticity} from "./Authenticity.sol";
 contract Ownership {
     using OwnershipLib for *;
 
-    address public AUTHENTICITY;
+    address private AUTHENTICITY;
 
-    address public immutable owner;
+    address private immutable owner;
     // this links username to a user profile
     mapping(string => IEri.UserProfile) private users;
     //link wallet address to username
@@ -28,16 +28,10 @@ contract Ownership {
     //this links change of ownership code to the new owner to the Item
     mapping(bytes32 => mapping(address => IEri.Item)) private tempOwners;
 
-    event ContractCreated(
-        address indexed contractAddress,
-        address indexed owner
-    );
 
+    event ContractCreated(address indexed contractAddress, address indexed owner);
     event UserRegistered(address indexed userAddress, string indexed username);
-    event OwnershipCode(
-        bytes32 indexed ownershipCode,
-        address indexed tempOwner
-    );
+    event OwnershipCode(bytes32 indexed ownershipCode, address indexed tempOwner);
     event ItemCreated(string indexed itemId, address indexed owner);
     event OwnershipClaimed(address indexed newOwner, address indexed oldOwner);
     event CodeRevoked(bytes32 indexed itemHash);
@@ -73,6 +67,8 @@ contract Ownership {
         _;
     }
 
+    //to make sure that the createItem function can only be called by the authenticity contract,
+    // we set the authenticity address here
     function setAuthenticity(address authenticityAddress) external onlyContractOwner {
         AUTHENTICITY = authenticityAddress;
         emit AuthenticitySet(authenticityAddress);
@@ -121,10 +117,12 @@ contract Ownership {
         emit ItemCreated(certificate.uniqueId, _caller);
     }
 
-    function getAllItemsFor(address user)
+    //to get all of the items that belong to me
+    function getAllMyItems()
     external
     view isAuthenticitySet
     returns (IEri.Item[] memory) {
+        address user = msg.sender;
         return users._getAllItemsFor(usernames, ownedItems, myItems, user);
     }
 
