@@ -4,9 +4,17 @@ import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { addressZero, parseError } from "../resources/error.js";
-import { getEvents } from "../resources/getEvents.js";
-import { OWNERSHIP_ABI } from "../resources/ownership_abi.js";
+import { addressZero, parseError } from "../resources/error";
+import { getEvents } from "../resources/getEvents";
+import { OWNERSHIP_ABI } from "../resources/ownership_abi";
+import {
+  Certificate,
+  CertificateWithHash,
+  OwnershipContract,
+  FormEvent,
+  ChangeEvent,
+  ClickEvent,
+} from "../../types";
 
 // Use environment variable or fallback to deployed contract address
 const OWNERSHIP =
@@ -14,30 +22,30 @@ const OWNERSHIP =
   "0x49e8207450dd0204Bb6a89A9edf7CE151cE58BBc";
 
 export default function Ownership() {
-  const [provider, setProvider] = useState(null);
-  const [signer, setSigner] = useState(null);
-  const [account, setAccount] = useState(null);
-  const [rContract, setRContract] = useState(null);
-  const [sContract, setSContract] = useState(null);
-  const [formVisible, setFormVisible] = useState("");
-  const [username, setUsername] = useState("");
-  const [queryAddress, setQueryAddress] = useState("");
-  const [queryItemHash, setQueryItemHash] = useState("");
-  const [owner, setOwner] = useState("");
-  const [userAddress, setUserAddress] = useState("");
-  const [authe, setAuthe] = useState("");
-  const [isOwn, setIsOwn] = useState("");
-  const [temOwner, setTemOwner] = useState("");
-  const [queryItemId, setQueryItemId] = useState("");
-  const [userDetails, setUserDetails] = useState("");
-  const [itemDetails, setItemDetails] = useState("");
-  const [itemsList, setItemsList] = useState([]);
-  const [ownershipCode, setOwnershipCode] = useState("");
-  const [tempOwnerAddress, setTempOwnerAddress] = useState("");
-  const [claimCode, setClaimCode] = useState("");
-  const [revokeCode, setRevokeCode] = useState("");
+  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
+  const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
+  const [account, setAccount] = useState<string | null>(null);
+  const [rContract, setRContract] = useState<OwnershipContract | null>(null);
+  const [sContract, setSContract] = useState<OwnershipContract | null>(null);
+  const [formVisible, setFormVisible] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
+  const [queryAddress, setQueryAddress] = useState<string>("");
+  const [queryItemHash, setQueryItemHash] = useState<string>("");
+  const [owner, setOwner] = useState<string>("");
+  const [userAddress, setUserAddress] = useState<string>("");
+  const [authe, setAuthe] = useState<string>("");
+  const [isOwn, setIsOwn] = useState<string>("");
+  const [temOwner, setTemOwner] = useState<string>("");
+  const [queryItemId, setQueryItemId] = useState<string>("");
+  const [userDetails, setUserDetails] = useState<string>("");
+  const [itemDetails, setItemDetails] = useState<string>("");
+  const [itemsList, setItemsList] = useState<any[]>([]);
+  const [ownershipCode, setOwnershipCode] = useState<string>("");
+  const [tempOwnerAddress, setTempOwnerAddress] = useState<string>("");
+  const [claimCode, setClaimCode] = useState<string>("");
+  const [revokeCode, setRevokeCode] = useState<string>("");
 
-  const [certificate, setCertificate] = useState({
+  const [certificate, setCertificate] = useState<Certificate>({
     name: "iPhone 12",
     uniqueId: "IMEI123",
     serial: "123456",
@@ -45,6 +53,7 @@ export default function Ownership() {
     owner: "",
     metadata: "BLACK,128GB",
   });
+
   useEffect(() => {
     // Check if OWNERSHIP address is valid
     if (!OWNERSHIP || OWNERSHIP === "undefined" || OWNERSHIP === "null") {
@@ -57,51 +66,69 @@ export default function Ownership() {
     if (typeof window.ethereum !== "undefined") {
       const web3Provider = new ethers.BrowserProvider(window.ethereum);
       setProvider(web3Provider);
-      setRContract(new ethers.Contract(OWNERSHIP, OWNERSHIP_ABI, web3Provider));
+      setRContract(
+        new ethers.Contract(
+          OWNERSHIP,
+          OWNERSHIP_ABI,
+          web3Provider
+        ) as unknown as OwnershipContract
+      );
     } else {
-      setProvider(ethers.getDefaultProvider);
+      setProvider(ethers.getDefaultProvider as any);
       toast.error("Please install MetaMask!");
     }
   }, []);
 
-  const connectWallet = async () => {
+  const connectWallet = async (): Promise<void> => {
     if (!provider) {
-      return toast.error("MetaMask not detected");
+      toast.error("MetaMask not detected");
+      return;
     }
 
     try {
       if (!account) {
-        await window.ethereum.request({ method: "eth_requestAccounts" });
+        await window.ethereum!.request({ method: "eth_requestAccounts" });
         const signer = await provider.getSigner();
         const address = await signer.getAddress();
         setSigner(signer);
         setAccount(address);
-        setSContract(new ethers.Contract(OWNERSHIP, OWNERSHIP_ABI, signer));
+        setSContract(
+          new ethers.Contract(
+            OWNERSHIP,
+            OWNERSHIP_ABI,
+            signer
+          ) as unknown as OwnershipContract
+        );
         toast.success(
           `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`
         );
-
-        return;
+      } else {
+        //to disconnect wallet
+        setSigner(null);
+        setAccount(null);
+        setRContract(
+          new ethers.Contract(
+            OWNERSHIP,
+            OWNERSHIP_ABI,
+            provider
+          ) as unknown as OwnershipContract
+        ); // to call view function
+        toast.success("Wallet disconnected");
       }
-
-      //to disconnect wallet
-      setSigner(null);
-      setAccount(null);
-      setRContract(new ethers.Contract(OWNERSHIP, OWNERSHIP_ABI, provider)); // to call view function
-      toast.success("Wallet disconnected");
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`Error: ${error.message}`);
     }
   };
 
-  const checkConnection = () => {
+  const checkConnection = (): boolean => {
     if (!account) {
       toast.error("Connect wallet!");
       return false;
     }
     return true;
   };
-  const registerUser = async (e) => {
+
+  const registerUser = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!checkConnection() || !sContract) return;
     try {
@@ -115,12 +142,12 @@ export default function Ownership() {
 
       setUsername("");
       setFormVisible("");
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`Error: ${parseError(error)}`);
     }
   };
 
-  const getUser = async (e) => {
+  const getUser = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!checkConnection() || !rContract) return;
     try {
@@ -132,19 +159,19 @@ export default function Ownership() {
 
       setUserDetails(
         `Address: ${user.userAddress}, 
-                      Username: ${user.username}, 
-                      Registered At: ${new Date(
-                        Number(user.registeredAt) * 1000
-                      ).toLocaleString()}`
+              Username: ${user.username}, 
+              Registered At: ${new Date(
+                Number(user.registeredAt) * 1000
+              ).toLocaleString()}`
       );
 
       toast.success(`Found user: ${user.username}`);
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`Error: ${parseError(error)}`);
     }
   };
 
-  const createItem = async (e) => {
+  const createItem = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!checkConnection() || !sContract) return;
     try {
@@ -161,7 +188,7 @@ export default function Ownership() {
       if (!ethers.isAddress(certificate.owner)) {
         throw new Error("Valid owner address required");
       }
-      if (isNaN(certificate.date) || Number(certificate.date) <= 0) {
+      if (isNaN(Number(certificate.date)) || Number(certificate.date) <= 0) {
         throw new Error("Invalid date: must be a valid Unix timestamp");
       }
       const metadata = certificate.metadata
@@ -169,11 +196,11 @@ export default function Ownership() {
         .map((item) => item.trim())
         .filter(Boolean);
 
-      const cert = {
+      const cert: CertificateWithHash = {
         name: certificate.name,
         uniqueId: certificate.uniqueId,
         serial: certificate.serial,
-        date: parseInt(certificate.date),
+        date: parseInt(certificate.date.toString()),
         owner: certificate.owner,
         metadataHash: ethers.keccak256(
           ethers.AbiCoder.defaultAbiCoder().encode(["string[]"], [metadata])
@@ -184,7 +211,7 @@ export default function Ownership() {
       console.log("Cert Owner: ", cert.owner);
       const manufacturerName = "APPLE Corp"; // Replace with dynamic input if needed
       console.log("Account: ", account);
-      const tx = await sContract.createItem(account, cert, manufacturerName);
+      const tx = await sContract.createItem(account!, cert, manufacturerName);
       await tx.wait();
 
       toast.success(`Item ${cert.uniqueId} created`);
@@ -193,252 +220,177 @@ export default function Ownership() {
         uniqueId: "",
         serial: "",
         date: "",
-        owner: account,
+        owner: account!,
         metadata: "",
       });
       setFormVisible("");
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`Error: ${parseError(error)}`);
     }
   };
 
-  const getAllItems = async (e) => {
+  const getAllItems = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!checkConnection() || !sContract) return;
     try {
-      // if (!ethers.isAddress(queryAddress)) throw new Error("Valid address required");
-
-      const items = await sContract.getAllMyItems();
-      setItemsList(
-        items.map((item) => ({
-          itemId: item.itemId,
-          name: item.name,
-          owner: item.owner,
-          serial: item.serial,
-          date: new Date(Number(item.date) * 1000).toLocaleString(),
-          manufacturer: item.manufacturer,
-          metadata: item.metadata.join(", "),
-        }))
-      );
+      const items = await sContract.getAllItems(account!);
+      setItemsList(items);
       toast.success(`Found ${items.length} items`);
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`Error: ${parseError(error)}`);
     }
   };
 
-  const getItem = async (e) => {
+  const getItem = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!checkConnection() || !rContract) return;
     try {
-      if (!queryItemId) throw new Error("Item ID required");
-      const item = await rContract.getItem(queryItemId);
-      setItemDetails(
-        `Item ID: ${item.itemId}, Name: ${item.name}, Owner: ${
-          item.owner
-        }, Serial: ${item.serial}, Date: ${new Date(
-          Number(item.date) * 1000
-        ).toLocaleString()}, Manufacturer: ${
-          item.manufacturer
-        }, Metadata: ${item.metadata.join(", ")}`
-      );
-      toast.success(`Found item: ${item.name}`);
-    } catch (error) {
+      if (!queryItemHash) throw new Error("Item hash required");
+      const item = await rContract.getItem(queryItemHash);
+      setItemDetails(JSON.stringify(item, null, 2));
+      toast.success("Item details retrieved");
+    } catch (error: any) {
       toast.error(`Error: ${parseError(error)}`);
     }
   };
 
-  const generateChangeOfOwnershipCode = async (e) => {
+  const generateChangeOfOwnershipCode = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!checkConnection() || !sContract) return;
     try {
-      if (!queryItemId) {
-        throw new Error("Item ID required");
+      if (!queryItemHash || !tempOwnerAddress) {
+        throw new Error("Item hash and new owner address required");
       }
       if (!ethers.isAddress(tempOwnerAddress)) {
-        throw new Error("Valid temporary owner address required");
+        throw new Error("Valid new owner address required");
       }
-
       const tx = await sContract.generateChangeOfOwnershipCode(
-        queryItemId,
+        queryItemHash,
         tempOwnerAddress
       );
-
       const receipt = await tx.wait();
-
-      const { ownershipCode, tempOwner } = getEvents(
-        sContract,
-        receipt,
-        "OwnershipCode"
-      );
-
-      console.log("Ownership Code: ", ownershipCode);
-      console.log("Temp Owner: ", tempOwner);
-
-      toast.success(`Ownership Code: ${ownershipCode}`);
-
-      setQueryItemId("");
-      setTempOwnerAddress("");
-    } catch (error) {
+      const code = getEvents(sContract, receipt, "OwnershipCodeGenerated");
+      setOwnershipCode(code);
+      toast.success(`Ownership code generated: ${code}`);
+    } catch (error: any) {
       toast.error(`Error: ${parseError(error)}`);
     }
   };
 
-  const newOwnerClaimOwnership = async (e) => {
+  const newOwnerClaimOwnership = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!checkConnection() || !sContract) return;
     try {
-      if (!claimCode || !ethers.isBytesLike(claimCode)) {
-        throw new Error("Valid ownership code required");
+      if (!queryItemHash || !claimCode) {
+        throw new Error("Item hash and claim code required");
       }
-      const tx = await sContract.newOwnerClaimOwnership(claimCode);
-      const receipt = await tx.wait();
-
-      const { newOwner, oldOwner } = getEvents(
-        sContract,
-        receipt,
-        "OwnershipClaimed"
+      const tx = await sContract.newOwnerClaimOwnership(
+        queryItemHash,
+        claimCode
       );
-      console.log("New Owner: ", newOwner);
-      console.log("Old Owner: ", oldOwner);
-
-      toast.success(`New Owner: ${newOwner}`);
-
-      setClaimCode("");
-      setFormVisible("");
-    } catch (error) {
+      await tx.wait();
+      toast.success("Ownership claimed successfully");
+    } catch (error: any) {
       toast.error(`Error: ${parseError(error)}`);
     }
   };
 
-  const revokeChangeOwnershipCode = async (e) => {
+  const revokeChangeOwnershipCode = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!checkConnection() || !sContract) return;
     try {
-      if (!revokeCode || !ethers.isBytesLike(revokeCode)) {
-        throw new Error("Valid ownership code required");
-      }
-
-      const tx = await sContract.ownerRevokeCode(revokeCode);
-
-      const receipt = await tx.wait();
-
-      const itemHash = getEvents(sContract, receipt, "CodeRevoked");
-      console.log("Item Hash: ", itemHash);
-
-      toast.success("Item Hash: ", itemHash);
-
-      setRevokeCode("");
-      setFormVisible("");
-    } catch (error) {
+      if (!queryItemHash) throw new Error("Item hash required");
+      const tx = await sContract.revokeChangeOwnershipCode(queryItemHash);
+      await tx.wait();
+      toast.success("Ownership code revoked");
+    } catch (error: any) {
       toast.error(`Error: ${parseError(error)}`);
     }
   };
 
-  const getTempOwner = async (e) => {
+  const getTempOwner = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!checkConnection() || !rContract) return;
     try {
-      if (!queryItemHash || !ethers.isBytesLike(queryItemHash)) {
-        throw new Error("Invalid Item Hash");
-      }
-
+      if (!queryItemHash) throw new Error("Item hash required");
       const tempOwner = await rContract.getTempOwner(queryItemHash);
-
-      if (tempOwner === addressZero()) {
-        throw new Error("No Temp Owner found!");
-      }
-
       setTemOwner(tempOwner);
-
-      toast.success(`Temp Owner: ${tempOwner}`);
-
-      setFormVisible("");
-    } catch (error) {
+      toast.success(`Temporary owner: ${tempOwner}`);
+    } catch (error: any) {
       toast.error(`Error: ${parseError(error)}`);
     }
   };
 
-  const verifyOwnership = async (e) => {
+  const verifyOwnership = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!checkConnection() || !rContract) return;
     try {
-      if (!queryItemId) {
-        throw new Error("Invalid Item ID");
+      if (!queryItemHash || !owner) {
+        throw new Error("Item hash and owner address required");
       }
-
-      const own = await rContract.verifyOwnership(queryItemId);
-
-      // const owne = JSON.stringify({
-      //     name: own.name,
-      //     id: own.itemId, // something very unique like the IMEI of a phone
-      //     ownerName: own.username,
-      //     ownerAddr: own.owner
-      // });
-
-      setOwner(own);
-
-      toast.success(`${own.username} is the verified owner`);
-
-      setQueryItemId("");
-      setFormVisible("");
-    } catch (error) {
-      toast.error(`Error: ${parseError(error)}`);
-    }
-  };
-
-  const isOwner = async (e) => {
-    e.preventDefault();
-    if (!checkConnection() || !rContract) return;
-    try {
-      if (!queryItemId || !userAddress) {
-        throw new Error("Invalid parameters");
+      if (!ethers.isAddress(owner)) {
+        throw new Error("Valid owner address required");
       }
-
-      const isValid = await rContract.isOwner(userAddress, queryItemId);
-
-      setIsOwn(`Result: ${isValid}`);
-
-      toast.success(`Result: ${isValid}`);
-
-      setQueryItemId("");
-      setUserAddress("");
-      setFormVisible("");
-    } catch (error) {
+      const isOwner = await rContract.verifyOwnership(queryItemHash, owner);
+      setOwner(isOwner ? "Yes" : "No");
+      toast.success(`Ownership verification: ${isOwner ? "Yes" : "No"}`);
+    } catch (error: any) {
       toast.error(`Error: ${parseError(error)}`);
     }
   };
 
-  const setAuthenticity = async (e) => {
+  const isOwner = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!checkConnection() || !rContract) return;
     try {
-      if (!authe || !ethers.isAddress(authe)) {
+      if (!queryItemHash || !userAddress) {
+        throw new Error("Item hash and user address required");
+      }
+      if (!ethers.isAddress(userAddress)) {
+        throw new Error("Valid user address required");
+      }
+      const isOwnerResult = await rContract.isOwner(queryItemHash, userAddress);
+      setIsOwn(isOwnerResult ? "Yes" : "No");
+      toast.success(`Is owner: ${isOwnerResult ? "Yes" : "No"}`);
+    } catch (error: any) {
+      toast.error(`Error: ${parseError(error)}`);
+    }
+  };
+
+  const setAuthenticity = async (e: FormEvent): Promise<void> => {
+    e.preventDefault();
+    if (!checkConnection() || !sContract) return;
+    try {
+      if (!ethers.isAddress(authe)) {
         throw new Error("Invalid Authenticity Address");
       }
-
       const tx = await sContract.setAuthenticity(authe);
-
       const receipt = await tx.wait();
       const authenticityAddress = getEvents(
         sContract,
         receipt,
         "AuthenticitySet"
       );
-
+      setAuthe(authenticityAddress);
       toast.success(`Authenticity Address: ${authenticityAddress}`);
-
-      setAuthe("");
-      setFormVisible("");
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`Error: ${parseError(error)}`);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-teal-100">
-      <header className="p-4 bg-blue-600 text-white shadow-md">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Ownership Management</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50">
+      <div className="container mx-auto p-6">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-blue-800 mb-4">
+            ERI - Ownership Management
+          </h1>
+          <p className="text-lg text-gray-600">
+            Blockchain-based ownership verification and transfer system
+          </p>
+        </div>
+
+        <div className="flex justify-center mb-6">
           <button
             onClick={connectWallet}
             className="bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
@@ -448,9 +400,7 @@ export default function Ownership() {
               : "Connect Wallet"}
           </button>
         </div>
-      </header>
 
-      <main className="container mx-auto p-6 space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-6 rounded-lg shadow-lg">
             <h2 className="text-xl font-semibold mb-4 text-blue-800">
@@ -470,17 +420,52 @@ export default function Ownership() {
                   <form onSubmit={registerUser} className="space-y-4 mt-4">
                     <input
                       type="text"
-                      placeholder="Username (min 3 characters)"
+                      placeholder="Username"
                       value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      onChange={(e: ChangeEvent) => setUsername(e.target.value)}
                       className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     />
                     <button
                       type="submit"
-                      className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
                     >
-                      Submit
+                      Register
                     </button>
+                  </form>
+                )}
+              </div>
+
+              <div>
+                <button
+                  onClick={() =>
+                    setFormVisible(formVisible === "getUser" ? "" : "getUser")
+                  }
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                >
+                  {formVisible === "getUser" ? "Hide" : "Get User"}
+                </button>
+                {formVisible === "getUser" && (
+                  <form onSubmit={getUser} className="space-y-4 mt-4">
+                    <input
+                      type="text"
+                      placeholder="User Address"
+                      value={queryAddress}
+                      onChange={(e: ChangeEvent) =>
+                        setQueryAddress(e.target.value)
+                      }
+                      className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                    >
+                      Search
+                    </button>
+                    {userDetails && (
+                      <p className="mt-2 text-gray-700">{userDetails}</p>
+                    )}
                   </form>
                 )}
               </div>
@@ -500,48 +485,18 @@ export default function Ownership() {
                   <form onSubmit={setAuthenticity} className="space-y-4 mt-4">
                     <input
                       type="text"
-                      placeholder="Authencity Address"
+                      placeholder="Authenticity Contract Address"
                       value={authe}
-                      onChange={(e) => setAuthe(e.target.value)}
+                      onChange={(e: ChangeEvent) => setAuthe(e.target.value)}
                       className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     />
                     <button
                       type="submit"
-                      className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
                     >
-                      Submit
+                      Set
                     </button>
-                  </form>
-                )}
-              </div>
-
-              <div>
-                <button
-                  onClick={() =>
-                    setFormVisible(formVisible === "getUser" ? "" : "getUser")
-                  }
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
-                >
-                  {formVisible === "getUser" ? "Hide" : "Get User by Address"}
-                </button>
-                {formVisible === "getUser" && (
-                  <form onSubmit={getUser} className="space-y-4 mt-4">
-                    <input
-                      type="text"
-                      placeholder="User Address"
-                      value={queryAddress}
-                      onChange={(e) => setQueryAddress(e.target.value)}
-                      className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      type="submit"
-                      className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
-                    >
-                      Submit
-                    </button>
-                    {userDetails && (
-                      <p className="mt-2 text-gray-700">{userDetails}</p>
-                    )}
                   </form>
                 )}
               </div>
@@ -566,118 +521,119 @@ export default function Ownership() {
                   <form onSubmit={createItem} className="space-y-4 mt-4">
                     <input
                       type="text"
-                      placeholder="Item Name"
+                      placeholder="Certificate Name"
                       value={certificate.name}
-                      onChange={(e) =>
+                      onChange={(e: ChangeEvent) =>
                         setCertificate({ ...certificate, name: e.target.value })
                       }
                       className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     />
                     <input
                       type="text"
                       placeholder="Unique ID"
                       value={certificate.uniqueId}
-                      onChange={(e) =>
+                      onChange={(e: ChangeEvent) =>
                         setCertificate({
                           ...certificate,
                           uniqueId: e.target.value,
                         })
                       }
                       className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     />
                     <input
                       type="text"
                       placeholder="Serial"
                       value={certificate.serial}
-                      onChange={(e) =>
+                      onChange={(e: ChangeEvent) =>
                         setCertificate({
                           ...certificate,
                           serial: e.target.value,
                         })
                       }
                       className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     />
                     <input
-                      type="number"
+                      type="text"
                       placeholder="Date (Unix timestamp)"
                       value={certificate.date}
-                      onChange={(e) =>
+                      onChange={(e: ChangeEvent) =>
                         setCertificate({ ...certificate, date: e.target.value })
                       }
                       className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     />
                     <input
                       type="text"
                       placeholder="Owner Address"
                       value={certificate.owner}
-                      onChange={(e) =>
+                      onChange={(e: ChangeEvent) =>
                         setCertificate({
                           ...certificate,
                           owner: e.target.value,
                         })
                       }
                       className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     />
                     <input
                       type="text"
                       placeholder="Metadata (comma-separated)"
                       value={certificate.metadata}
-                      onChange={(e) =>
+                      onChange={(e: ChangeEvent) =>
                         setCertificate({
                           ...certificate,
                           metadata: e.target.value,
                         })
                       }
                       className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     />
                     <button
                       type="submit"
-                      className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
                     >
-                      Submit
+                      Create
                     </button>
                   </form>
                 )}
               </div>
+
               <div>
                 <button
                   onClick={() =>
-                    setFormVisible(formVisible === "getItems" ? "" : "getItems")
+                    setFormVisible(formVisible === "getAll" ? "" : "getAll")
                   }
                   className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
                 >
-                  {formVisible === "getItems" ? "Hide" : "Get All Items"}
+                  {formVisible === "getAll" ? "Hide" : "Get All Items"}
                 </button>
-                {formVisible === "getItems" && (
+                {formVisible === "getAll" && (
                   <form onSubmit={getAllItems} className="space-y-4 mt-4">
-                    {/*<input*/}
-                    {/*    type="text"*/}
-                    {/*    placeholder="User Address"*/}
-                    {/*    value={queryAddress}*/}
-                    {/*    onChange={(e) => setQueryAddress(e.target.value)}*/}
-                    {/*    className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"*/}
-                    {/*/>*/}
                     <button
                       type="submit"
-                      className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
                     >
-                      Submit
+                      Get Items
                     </button>
                     {itemsList.length > 0 && (
-                      <ul className="mt-2 text-gray-700">
-                        {itemsList.map((item, index) => (
-                          <li key={index}>
-                            <p>ID: {item.itemId},</p>
-                            <p>Name: {item.name},</p>
-                            <p> Date: {item.date},</p>
-                            <p> Metadata: {item.metadata}</p>
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="mt-4">
+                        <h4 className="font-semibold mb-2">Items:</h4>
+                        <ul className="space-y-2">
+                          {itemsList.map((item, index) => (
+                            <li key={index} className="text-sm text-gray-700">
+                              {JSON.stringify(item)}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
                   </form>
                 )}
               </div>
+
               <div>
                 <button
                   onClick={() =>
@@ -685,36 +641,43 @@ export default function Ownership() {
                   }
                   className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
                 >
-                  {formVisible === "getItem" ? "Hide" : "Get Item by ID"}
+                  {formVisible === "getItem" ? "Hide" : "Get Item"}
                 </button>
                 {formVisible === "getItem" && (
                   <form onSubmit={getItem} className="space-y-4 mt-4">
                     <input
                       type="text"
-                      placeholder="Item ID"
-                      value={queryItemId}
-                      onChange={(e) => setQueryItemId(e.target.value)}
+                      placeholder="Item Hash"
+                      value={queryItemHash}
+                      onChange={(e: ChangeEvent) =>
+                        setQueryItemHash(e.target.value)
+                      }
                       className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     />
                     <button
                       type="submit"
-                      className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
                     >
-                      Submit
+                      Get Item
                     </button>
                     {itemDetails && (
-                      <p className="mt-2 text-gray-700">{itemDetails}</p>
+                      <pre className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                        {itemDetails}
+                      </pre>
                     )}
                   </form>
                 )}
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 text-blue-800">
-              Ownership Transfer
-            </h2>
+        <div className="mt-8 bg-white p-6 rounded-lg shadow-lg">
+          <h2 className="text-xl font-semibold mb-4 text-blue-800">
+            Ownership Transfer Operations
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
                 <button
@@ -736,136 +699,34 @@ export default function Ownership() {
                   >
                     <input
                       type="text"
-                      placeholder="Item ID"
-                      value={queryItemId}
-                      onChange={(e) => setQueryItemId(e.target.value)}
+                      placeholder="Item Hash"
+                      value={queryItemHash}
+                      onChange={(e: ChangeEvent) =>
+                        setQueryItemHash(e.target.value)
+                      }
                       className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     />
                     <input
                       type="text"
-                      placeholder="Temporary Owner Address"
+                      placeholder="New Owner Address"
                       value={tempOwnerAddress}
-                      onChange={(e) => setTempOwnerAddress(e.target.value)}
+                      onChange={(e: ChangeEvent) =>
+                        setTempOwnerAddress(e.target.value)
+                      }
                       className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     />
                     <button
                       type="submit"
-                      className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
                     >
-                      Submit
+                      Generate Code
                     </button>
                     {ownershipCode && (
-                      <p className="mt-2 text-gray-700">{ownershipCode}</p>
-                    )}
-                  </form>
-                )}
-              </div>
-
-              <div>
-                <button
-                  onClick={() =>
-                    setFormVisible(formVisible === "isOwner" ? "" : "isOwner")
-                  }
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
-                >
-                  {formVisible === "isOwner" ? "Hide" : "Is Owner"}
-                </button>
-                {formVisible === "isOwner" && (
-                  <form onSubmit={isOwner} className="space-y-4 mt-4">
-                    <input
-                      type="text"
-                      placeholder="Owner Address"
-                      value={userAddress}
-                      onChange={(e) => setUserAddress(e.target.value)}
-                      className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Item ID"
-                      value={queryItemId}
-                      onChange={(e) => setQueryItemId(e.target.value)}
-                      className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-
-                    <button
-                      type="submit"
-                      className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
-                    >
-                      Submit
-                    </button>
-                    {isOwn && <p className="mt-2 text-gray-700">{isOwn}</p>}
-                  </form>
-                )}
-              </div>
-
-              <div>
-                <button
-                  onClick={() =>
-                    setFormVisible(formVisible === "verify" ? "" : "verify")
-                  }
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
-                >
-                  {formVisible === "verify" ? "Hide" : "Verify Ownership"}
-                </button>
-                {formVisible === "verify" && (
-                  <form onSubmit={verifyOwnership} className="space-y-4 mt-4">
-                    <input
-                      type="text"
-                      placeholder="Item ID"
-                      value={queryItemId}
-                      onChange={(e) => setQueryItemId(e.target.value)}
-                      className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      type="submit"
-                      className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
-                    >
-                      Submit
-                    </button>
-                    {owner && (
-                      <ul className="mt-2 text-gray-700">
-                        {
-                          <li>
-                            <p> Item Name: {owner.name},</p>
-                            <p>Item ID: {owner.itemId},</p>
-                            <p>Owner Name: {owner.username},</p>
-                            <p>Owner Address: {owner.owner}</p>
-                          </li>
-                        }
-                      </ul>
-                    )}
-                  </form>
-                )}
-              </div>
-
-              <div>
-                <button
-                  onClick={() =>
-                    setFormVisible(
-                      formVisible === "tempOwner" ? "" : "tempOwner"
-                    )
-                  }
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
-                >
-                  {formVisible === "tempOwner" ? "Hide" : "Get Temp Owner"}
-                </button>
-                {formVisible === "tempOwner" && (
-                  <form onSubmit={getTempOwner} className="space-y-4 mt-4">
-                    <input
-                      type="text"
-                      placeholder="Ownership Code (bytes32)"
-                      value={queryItemHash}
-                      onChange={(e) => setQueryItemHash(e.target.value)}
-                      className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      type="submit"
-                      className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
-                    >
-                      Submit
-                    </button>
-                    {temOwner && (
-                      <p className="mt-2 text-gray-700">{temOwner}</p>
+                      <p className="mt-2 text-gray-700">
+                        Code: {ownershipCode}
+                      </p>
                     )}
                   </form>
                 )}
@@ -891,20 +752,34 @@ export default function Ownership() {
                   >
                     <input
                       type="text"
-                      placeholder="Ownership Code (bytes32)"
-                      value={claimCode}
-                      onChange={(e) => setClaimCode(e.target.value)}
+                      placeholder="Item Hash"
+                      value={queryItemHash}
+                      onChange={(e: ChangeEvent) =>
+                        setQueryItemHash(e.target.value)
+                      }
                       className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder="Claim Code"
+                      value={claimCode}
+                      onChange={(e: ChangeEvent) =>
+                        setClaimCode(e.target.value)
+                      }
+                      className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     />
                     <button
                       type="submit"
-                      className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
                     >
-                      Submit
+                      Claim
                     </button>
                   </form>
                 )}
               </div>
+
               <div>
                 <button
                   onClick={() =>
@@ -914,9 +789,7 @@ export default function Ownership() {
                   }
                   className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
                 >
-                  {formVisible === "revokeCode"
-                    ? "Hide"
-                    : "Revoke Ownership Code"}
+                  {formVisible === "revokeCode" ? "Hide" : "Revoke Code"}
                 </button>
                 {formVisible === "revokeCode" && (
                   <form
@@ -925,24 +798,159 @@ export default function Ownership() {
                   >
                     <input
                       type="text"
-                      placeholder="Ownership Code (bytes32)"
-                      value={revokeCode}
-                      onChange={(e) => setRevokeCode(e.target.value)}
+                      placeholder="Item Hash"
+                      value={queryItemHash}
+                      onChange={(e: ChangeEvent) =>
+                        setQueryItemHash(e.target.value)
+                      }
                       className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     />
                     <button
                       type="submit"
-                      className="w-full bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
                     >
-                      Submit
+                      Revoke
                     </button>
+                  </form>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <button
+                  onClick={() =>
+                    setFormVisible(
+                      formVisible === "getTempOwner" ? "" : "getTempOwner"
+                    )
+                  }
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                >
+                  {formVisible === "getTempOwner"
+                    ? "Hide"
+                    : "Get Temporary Owner"}
+                </button>
+                {formVisible === "getTempOwner" && (
+                  <form onSubmit={getTempOwner} className="space-y-4 mt-4">
+                    <input
+                      type="text"
+                      placeholder="Item Hash"
+                      value={queryItemHash}
+                      onChange={(e: ChangeEvent) =>
+                        setQueryItemHash(e.target.value)
+                      }
+                      className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                    >
+                      Get Temp Owner
+                    </button>
+                    {temOwner && (
+                      <p className="mt-2 text-gray-700">
+                        Temporary Owner: {temOwner}
+                      </p>
+                    )}
+                  </form>
+                )}
+              </div>
+
+              <div>
+                <button
+                  onClick={() =>
+                    setFormVisible(
+                      formVisible === "verifyOwnership" ? "" : "verifyOwnership"
+                    )
+                  }
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                >
+                  {formVisible === "verifyOwnership"
+                    ? "Hide"
+                    : "Verify Ownership"}
+                </button>
+                {formVisible === "verifyOwnership" && (
+                  <form onSubmit={verifyOwnership} className="space-y-4 mt-4">
+                    <input
+                      type="text"
+                      placeholder="Item Hash"
+                      value={queryItemHash}
+                      onChange={(e: ChangeEvent) =>
+                        setQueryItemHash(e.target.value)
+                      }
+                      className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder="Owner Address"
+                      value={owner}
+                      onChange={(e: ChangeEvent) => setOwner(e.target.value)}
+                      className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                    >
+                      Verify
+                    </button>
+                    {owner && owner !== "" && (
+                      <p className="mt-2 text-gray-700">Is Owner: {owner}</p>
+                    )}
+                  </form>
+                )}
+              </div>
+
+              <div>
+                <button
+                  onClick={() =>
+                    setFormVisible(formVisible === "isOwner" ? "" : "isOwner")
+                  }
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                >
+                  {formVisible === "isOwner" ? "Hide" : "Is Owner"}
+                </button>
+                {formVisible === "isOwner" && (
+                  <form onSubmit={isOwner} className="space-y-4 mt-4">
+                    <input
+                      type="text"
+                      placeholder="Item Hash"
+                      value={queryItemHash}
+                      onChange={(e: ChangeEvent) =>
+                        setQueryItemHash(e.target.value)
+                      }
+                      className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    <input
+                      type="text"
+                      placeholder="User Address"
+                      value={userAddress}
+                      onChange={(e: ChangeEvent) =>
+                        setUserAddress(e.target.value)
+                      }
+                      className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                    <button
+                      type="submit"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300"
+                    >
+                      Check
+                    </button>
+                    {isOwn && isOwn !== "" && (
+                      <p className="mt-2 text-gray-700">Is Owner: {isOwn}</p>
+                    )}
                   </form>
                 )}
               </div>
             </div>
           </div>
         </div>
-      </main>
+      </div>
       <ToastContainer
         position="top-right"
         autoClose={5000}

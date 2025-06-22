@@ -1,4 +1,9 @@
-export function signTypedData(certificate, chainId) {
+import { Certificate, TypedData } from "../../types";
+
+export function signTypedData(
+  certificate: Certificate,
+  chainId: string | number
+): TypedData {
   // Use environment variables or fallback values
   const SIGNING_DOMAIN = process.env.NEXT_PUBLIC_SIGNING_DOMAIN || "ERI";
   const SIGNATURE_VERSION = process.env.NEXT_PUBLIC_SIGNATURE_VERSION || "1";
@@ -28,9 +33,14 @@ export function signTypedData(certificate, chainId) {
       name: certificate.name,
       uniqueId: certificate.uniqueId,
       serial: certificate.serial,
-      date: certificate.date,
+      date:
+        typeof certificate.date === "string"
+          ? parseInt(certificate.date)
+          : certificate.date,
       owner: certificate.owner,
-      metadataHash: certificate.metadataHash,
+      metadataHash:
+        certificate.metadataHash ||
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
     },
   };
 }
