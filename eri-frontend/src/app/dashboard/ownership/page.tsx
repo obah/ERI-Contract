@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Ownership from "@/components/Ownership";
+import OwnershipFeatures from "@/components/ownership/ownership-features";
 
 export default function OwnershipPage() {
   return (
@@ -15,7 +15,7 @@ export default function OwnershipPage() {
             Verify and manage ownership of your digital assets and contracts.
           </p>
         </div>
-        <Ownership />
+        <OwnershipFeatures />
       </main>
     </div>
   );

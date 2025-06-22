@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useState } from "react";
 import { PAGE_LINKS } from "@/lib/constants";
+import { Icons } from "./ui/icons";
 
 interface NavbarProps {
   className?: string;
@@ -77,10 +78,7 @@ export function Navbar({ className }: NavbarProps) {
           {/* Logo */}
           <div className="flex items-center space-x-2">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <ShieldCheckIcon className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="font-bold text-xl">ERI Contract</span>
+              <Icons.eriBlue className="h-20 w-20" />
             </Link>
           </div>
 

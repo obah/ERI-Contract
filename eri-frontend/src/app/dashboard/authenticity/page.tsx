@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Authenticity from "@/components/Authenticity";
+import AuthenticityFeatures from "@/components/authencity/authenticity-features";
 
 export default function AuthenticityPage() {
   return (
@@ -16,7 +16,7 @@ export default function AuthenticityPage() {
             blockchain technology.
           </p>
         </div>
-        <Authenticity />
+        <AuthenticityFeatures />
       </main>
     </div>
   );

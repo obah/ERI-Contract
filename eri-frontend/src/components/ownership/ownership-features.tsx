@@ -4,9 +4,9 @@ import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { addressZero, parseError } from "../lib/resources/error";
-import { getEvents } from "../lib/resources/getEvents";
-import { OWNERSHIP_ABI } from "../lib/resources/ownership_abi";
+import { addressZero, parseError } from "../../lib/resources/error";
+import { getEvents } from "../../lib/resources/getEvents";
+import { OWNERSHIP_ABI } from "../../lib/resources/ownership_abi";
 import {
   Certificate,
   CertificateWithHash,
@@ -14,14 +14,14 @@ import {
   FormEvent,
   ChangeEvent,
   ClickEvent,
-} from "../types";
+} from "../../types";
 
 // Use environment variable or fallback to deployed contract address
 const OWNERSHIP =
   process.env.NEXT_PUBLIC_OWNERSHIP ||
   "0x49e8207450dd0204Bb6a89A9edf7CE151cE58BBc";
 
-export default function Ownership() {
+export default function OwnershipFeatures() {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
   const [account, setAccount] = useState<string | null>(null);

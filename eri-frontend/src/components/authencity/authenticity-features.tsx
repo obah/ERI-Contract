@@ -5,18 +5,18 @@ import { ethers } from "ethers";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { signTypedData } from "../lib/resources/typedData";
-import { parseError } from "../lib/resources/error";
+import { signTypedData } from "../../lib/resources/typedData";
+import { parseError } from "../../lib/resources/error";
 import { QRCodeCanvas } from "qrcode.react";
-import { AUTHENTICITY_ABI } from "../lib/resources/authenticity_abi";
-import { Certificate, CertificateWithHash } from "../types";
+import { AUTHENTICITY_ABI } from "../../lib/resources/authenticity_abi";
+import { Certificate, CertificateWithHash } from "../../types";
 
 // Use environment variable or fallback to deployed contract address
 const AUTHENTICITY =
   process.env.NEXT_PUBLIC_AUTHENTICITY ||
   "0x98BC72046616b528D4Bc5bbcC7d99f82237A8B55";
 
-function Authenticity() {
+function AuthenticityFeatures() {
   const [provider, setProvider] = useState<any>(null);
   const [signer, setSigner] = useState<any>(null);
   const [account, setAccount] = useState<string | null>(null);
@@ -732,4 +732,4 @@ function Authenticity() {
   );
 }
 
-export default Authenticity;
+export default AuthenticityFeatures;
