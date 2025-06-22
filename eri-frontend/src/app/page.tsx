@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import Authenticity from "./components/Authenticity";
-import Ownership from "./components/Ownership";
+import Authenticity from "../components/Authenticity";
+import Ownership from "../components/Ownership";
 
 export default function Home() {
   const [showAuthenticity, setShowAuthenticity] = useState<boolean>(true);

@@ -4,9 +4,9 @@ import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { addressZero, parseError } from "../resources/error";
-import { getEvents } from "../resources/getEvents";
-import { OWNERSHIP_ABI } from "../resources/ownership_abi";
+import { addressZero, parseError } from "../lib/resources/error";
+import { getEvents } from "../lib/resources/getEvents";
+import { OWNERSHIP_ABI } from "../lib/resources/ownership_abi";
 import {
   Certificate,
   CertificateWithHash,
@@ -14,7 +14,7 @@ import {
   FormEvent,
   ChangeEvent,
   ClickEvent,
-} from "../../types";
+} from "../types";
 
 // Use environment variable or fallback to deployed contract address
 const OWNERSHIP =
