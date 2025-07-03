@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { ethers } from "ethers";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { QRCodeCanvas } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,6 @@ import {
   FileText,
   QrCode,
 } from "lucide-react";
-import { Certificate, CertificateWithHash } from "../../types";
 import { signTypedData } from "../../lib/resources/typedData";
 import { parseError } from "../../lib/resources/error";
 import { AUTHENTICITY_ABI } from "../../lib/resources/authenticity_abi";

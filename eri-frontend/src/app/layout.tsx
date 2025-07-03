@@ -3,6 +3,7 @@ import "./globals.css";
 import { ReactNode } from "react";
 import { headers } from "next/headers";
 import AppkitProvider from "@/context/AppkitProvider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,7 +34,10 @@ export default async function RootLayout({ children }: RootLayoutProps) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AppkitProvider cookies={cookies}>{children}</AppkitProvider>
+        <AppkitProvider cookies={cookies}>
+          {children}
+          <Toaster position="top-right" />
+        </AppkitProvider>
       </body>
     </html>
   );

@@ -3,13 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import axios from "axios";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { signTypedData } from "../../lib/resources/typedData";
 import { parseError } from "../../lib/resources/error";
 import { QRCodeCanvas } from "qrcode.react";
 import { AUTHENTICITY_ABI } from "../../lib/resources/authenticity_abi";
-import { Certificate, CertificateWithHash } from "../../types";
 import AuthenticitySidebar from "./authenticity-sidebar";
 import AuthenticityOperations from "./authenticity-operations";
 import {
@@ -25,6 +22,7 @@ import {
   Sidebar,
   SidebarInset,
 } from "@/components/ui/sidebar";
+import { toast } from "sonner";
 
 // Use environment variable or fallback to deployed contract address
 const AUTHENTICITY =
@@ -422,11 +420,6 @@ function AuthenticityFeatures() {
             )}
           </main>
         </SidebarInset>
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-        />
       </div>
     </SidebarProvider>
   );

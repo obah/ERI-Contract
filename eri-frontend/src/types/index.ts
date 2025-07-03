@@ -1,16 +1,16 @@
 // ERI Frontend Type Definitions
 
 // Contract ABIs
-export interface AuthenticityABI {
+interface AuthenticityABI {
   [key: string]: any;
 }
 
-export interface OwnershipABI {
+interface OwnershipABI {
   [key: string]: any;
 }
 
 // Certificate Types
-export interface Certificate {
+interface Certificate {
   name: string;
   uniqueId: string;
   serial: string;
@@ -20,34 +20,34 @@ export interface Certificate {
   metadataHash?: string;
 }
 
-export interface CertificateWithHash extends Omit<Certificate, "metadata"> {
+interface CertificateWithHash extends Omit<Certificate, "metadata"> {
   metadataHash: string;
   metadata: string[];
 }
 
 // Contract Types
-export interface ContractConfig {
+interface ContractConfig {
   address: string;
   abi: any[];
 }
 
 // Provider and Signer Types
-export interface Web3Provider {
+interface Web3Provider {
   getSigner(): Promise<Signer>;
   getNetwork(): Promise<Network>;
 }
 
-export interface Signer {
+interface Signer {
   getAddress(): Promise<string>;
   signTypedData(domain: any, types: any, value: any): Promise<string>;
 }
 
-export interface Network {
+interface Network {
   chainId: bigint;
 }
 
 // Contract Instance Types - Using any for flexibility with ethers.js contracts
-export interface AuthenticityContract extends Record<string, any> {
+interface AuthenticityContract extends Record<string, any> {
   manufacturerRegisters(name: string): Promise<any>;
   getManufacturerByName(name: string): Promise<string>;
   getManufacturer(
@@ -63,7 +63,7 @@ export interface AuthenticityContract extends Record<string, any> {
   ): Promise<[boolean, string]>;
 }
 
-export interface OwnershipContract extends Record<string, any> {
+interface OwnershipContract extends Record<string, any> {
   userRegisters(username: string): Promise<any>;
   getUser(
     address: string
@@ -88,7 +88,7 @@ export interface OwnershipContract extends Record<string, any> {
 }
 
 // Form State Types
-export interface FormVisibleState {
+interface FormVisibleState {
   register?: boolean;
   byName?: boolean;
   byAddress?: boolean;
@@ -99,7 +99,7 @@ export interface FormVisibleState {
 }
 
 // Component State Types
-export interface AuthenticityState {
+interface AuthenticityState {
   provider: Web3Provider | null;
   signer: Signer | null;
   account: string | null;
@@ -120,7 +120,7 @@ export interface AuthenticityState {
   certificate: Certificate;
 }
 
-export interface OwnershipState {
+interface OwnershipState {
   provider: Web3Provider | null;
   signer: Signer | null;
   account: string | null;
@@ -147,21 +147,21 @@ export interface OwnershipState {
 }
 
 // Typed Data Types
-export interface TypedDataDomain {
+interface TypedDataDomain {
   name: string;
   version: string;
   chainId: number;
   verifyingContract: string;
 }
 
-export interface TypedDataTypes {
+interface TypedDataTypes {
   Certificate: Array<{
     name: string;
     type: string;
   }>;
 }
 
-export interface TypedDataValue {
+interface TypedDataValue {
   name: string;
   uniqueId: string;
   serial: string;
@@ -170,7 +170,7 @@ export interface TypedDataValue {
   metadataHash: string;
 }
 
-export interface TypedData {
+interface TypedData {
   types: TypedDataTypes;
   primaryType: string;
   domain: TypedDataDomain;
@@ -178,33 +178,33 @@ export interface TypedData {
 }
 
 // Error Types
-export interface EriError {
+interface EriError {
   code: string;
   message: string;
   data?: any;
 }
 
 // Event Types
-export interface ContractEvent {
+interface ContractEvent {
   name: string;
   args: any[];
 }
 
 // QR Code Types
-export interface QRCodeData {
+interface QRCodeData {
   cert: CertificateWithHash;
   signature: string;
 }
 
 // API Response Types
-export interface ApiResponse<T = any> {
+interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   error?: string;
 }
 
 // Environment Variables
-export interface EnvironmentVariables {
+interface EnvironmentVariables {
   NEXT_PUBLIC_AUTHENTICITY: string;
   NEXT_PUBLIC_OWNERSHIP: string;
   NEXT_PUBLIC_SIGNING_DOMAIN: string;
@@ -212,20 +212,20 @@ export interface EnvironmentVariables {
 }
 
 // Utility Types
-export type FormEvent = React.FormEvent<HTMLFormElement>;
-export type ChangeEvent = React.ChangeEvent<HTMLInputElement>;
-export type ClickEvent = React.MouseEvent<HTMLButtonElement>;
+type FormEvent = React.FormEvent<HTMLFormElement>;
+type ChangeEvent = React.ChangeEvent<HTMLInputElement>;
+type ClickEvent = React.MouseEvent<HTMLButtonElement>;
 
 // Component Props Types
-export interface AuthenticityProps {}
+interface AuthenticityProps {}
 
-export interface OwnershipProps {}
+interface OwnershipProps {}
 
 // Toast Types
-export type ToastType = "success" | "error" | "info" | "warning";
+type ToastType = "success" | "error" | "info" | "warning";
 
 // Network Types
-export interface NetworkConfig {
+interface NetworkConfig {
   chainId: number;
   name: string;
   rpcUrl: string;

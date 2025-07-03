@@ -22,11 +22,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useState } from "react";
 import { PAGE_LINKS } from "@/lib/constants";
 import { Icons } from "./ui/icons";
+import "@reown/appkit-wallet-button/react";
 
 interface NavbarProps {
   className?: string;
@@ -99,6 +99,8 @@ export function Navbar({ className }: NavbarProps) {
                 <span>{item.title}</span>
               </Link>
             ))}
+
+            <appkit-button size="md" label="Connect" balance="hide" />
           </nav>
 
           {/* Mobile Menu Button */}

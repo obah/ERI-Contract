@@ -12,7 +12,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import {
   Package,
   UserPlus,
@@ -29,15 +28,11 @@ import {
 interface OwnershipSidebarProps {
   onOperationSelect: (operation: string) => void;
   selectedOperation: string;
-  account: string | null;
-  onConnectWallet: () => void;
 }
 
 export default function OwnershipSidebar({
   onOperationSelect,
   selectedOperation,
-  account,
-  onConnectWallet,
 }: OwnershipSidebarProps) {
   const userOperations = [
     {
@@ -201,20 +196,6 @@ export default function OwnershipSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter>
-        <div className="flex flex-col gap-2 p-2">
-          {account ? (
-            <div className="text-xs text-muted-foreground px-2">
-              Connected: {account.slice(0, 6)}...{account.slice(-4)}
-            </div>
-          ) : (
-            <Button onClick={onConnectWallet} className="w-full">
-              Connect Wallet
-            </Button>
-          )}
-        </div>
-      </SidebarFooter>
     </Sidebar>
   );
 }
