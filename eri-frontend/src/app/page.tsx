@@ -4,8 +4,6 @@ import React from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/navbar";
 import {
-  ShieldCheckIcon,
-  FileTextIcon,
   GlobeIcon,
   ArrowRightIcon,
   CheckCircleIcon,
@@ -15,8 +13,13 @@ import {
   SearchIcon,
 } from "lucide-react";
 import { PAGE_LINKS } from "@/lib/constants";
+import { useAppKitAccount } from "@reown/appkit/react";
+import "@reown/appkit-wallet-button/react";
 
 export default function Home() {
+  const { address, isConnected, caipAddress, status, embeddedWalletInfo } =
+    useAppKitAccount();
+
   const features = [
     {
       title: "Item Registration & Verification",
@@ -72,6 +75,12 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-teal-100">
       <Navbar />
+
+      <appkit-button
+        size="md"
+        label="Connect Wallet"
+        loadingLabel="Connecting…"
+      />
 
       <main className="container mx-auto p-6">
         {/* Hero Section */}

@@ -428,70 +428,64 @@ export default function OwnershipFeatures() {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen bg-gradient-to-br from-blue-50 to-teal-50">
-        <Sidebar>
-          <OwnershipSidebar
-            onOperationSelect={handleOperationSelect}
-            selectedOperation={selectedOperation}
-            account={account}
-            onConnectWallet={connectWallet}
-          />
-        </Sidebar>
-        <SidebarInset>
-          <main className="flex-1 p-8 overflow-auto">
-            {selectedOperation ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleBackToList}
-                  className="mb-4"
-                >
-                  ← Back to List
-                </Button>
-                {/* TODO: Render the operation form/component for the selected operation here */}
-                <div className="text-center text-muted-foreground">
-                  Operation form for <b>{selectedOperation}</b> goes here.
-                </div>
-              </>
-            ) : (
-              <div>
-                <h2 className="text-2xl font-bold mb-6">Your Items</h2>
-                {loading ? (
-                  <div>Loading items...</div>
-                ) : itemsList.length === 0 ? (
-                  <div>No items found.</div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {itemsList.map((item, idx) => (
-                      <Card key={idx}>
-                        <CardHeader>
-                          <CardTitle>{item.name}</CardTitle>
-                          <CardDescription>
-                            Serial: {item.serial}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-sm text-muted-foreground mb-2">
-                            Unique ID: {item.uniqueId}
-                          </div>
-                          <div className="text-sm text-muted-foreground mb-2">
-                            Owner: {item.owner}
-                          </div>
-                          <div className="text-sm text-muted-foreground mb-2">
-                            Date: {item.date}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Metadata: {item.metadata}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+      <div className="flex h-full bg-red-500">
+        <OwnershipSidebar
+          onOperationSelect={handleOperationSelect}
+          selectedOperation={selectedOperation}
+          account={account}
+          onConnectWallet={connectWallet}
+        />
+        <main className="flex-1 p-8 overflow-auto">
+          {selectedOperation ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleBackToList}
+                className="mb-4"
+              >
+                ← Back to List
+              </Button>
+              {/* TODO: Render the operation form/component for the selected operation here */}
+              <div className="text-center text-muted-foreground">
+                Operation form for <b>{selectedOperation}</b> goes here.
               </div>
-            )}
-          </main>
-        </SidebarInset>
+            </>
+          ) : (
+            <div className="w-full">
+              <h2 className="text-2xl font-bold mb-6">Your Items</h2>
+              {loading ? (
+                <div>Loading items...</div>
+              ) : itemsList.length === 0 ? (
+                <div>No items found.</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {itemsList.map((item, idx) => (
+                    <Card key={idx}>
+                      <CardHeader>
+                        <CardTitle>{item.name}</CardTitle>
+                        <CardDescription>Serial: {item.serial}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-sm text-muted-foreground mb-2">
+                          Unique ID: {item.uniqueId}
+                        </div>
+                        <div className="text-sm text-muted-foreground mb-2">
+                          Owner: {item.owner}
+                        </div>
+                        <div className="text-sm text-muted-foreground mb-2">
+                          Date: {item.date}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Metadata: {item.metadata}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </main>
         <ToastContainer
           position="top-right"
           autoClose={5000}

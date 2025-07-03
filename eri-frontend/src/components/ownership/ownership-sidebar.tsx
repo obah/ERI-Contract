@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -9,20 +8,13 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
-  SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
-  Users,
   Package,
-  ArrowRightLeft,
   UserPlus,
   Search,
   Settings,
@@ -32,7 +24,6 @@ import {
   Key,
   UserCheck,
   Shield,
-  Building,
 } from "lucide-react";
 
 interface OwnershipSidebarProps {
@@ -142,75 +133,75 @@ export default function OwnershipSidebar({
           </div>
         </div>
       </SidebarHeader>
+
       <SidebarContent>
-        <SidebarInset>
-          <SidebarGroup>
-            <SidebarGroupLabel>User Operations</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {userOperations.map((operation) => {
-                  const Icon = operation.icon;
-                  return (
-                    <SidebarMenuItem key={operation.id}>
-                      <SidebarMenuButton
-                        onClick={() => onOperationSelect(operation.id)}
-                        data-active={selectedOperation === operation.id}
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span>{operation.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>User Operations</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {userOperations.map((operation) => {
+                const Icon = operation.icon;
+                return (
+                  <SidebarMenuItem key={operation.id}>
+                    <SidebarMenuButton
+                      onClick={() => onOperationSelect(operation.id)}
+                      data-active={selectedOperation === operation.id}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{operation.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-          <SidebarGroup>
-            <SidebarGroupLabel>Item Operations</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {itemOperations.map((operation) => {
-                  const Icon = operation.icon;
-                  return (
-                    <SidebarMenuItem key={operation.id}>
-                      <SidebarMenuButton
-                        onClick={() => onOperationSelect(operation.id)}
-                        data-active={selectedOperation === operation.id}
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span>{operation.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Item Operations</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {itemOperations.map((operation) => {
+                const Icon = operation.icon;
+                return (
+                  <SidebarMenuItem key={operation.id}>
+                    <SidebarMenuButton
+                      onClick={() => onOperationSelect(operation.id)}
+                      data-active={selectedOperation === operation.id}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{operation.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-          <SidebarGroup>
-            <SidebarGroupLabel>Ownership Transfer</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {ownershipTransferOperations.map((operation) => {
-                  const Icon = operation.icon;
-                  return (
-                    <SidebarMenuItem key={operation.id}>
-                      <SidebarMenuButton
-                        onClick={() => onOperationSelect(operation.id)}
-                        data-active={selectedOperation === operation.id}
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span>{operation.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarInset>
+        <SidebarGroup>
+          <SidebarGroupLabel>Ownership Transfer</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {ownershipTransferOperations.map((operation) => {
+                const Icon = operation.icon;
+                return (
+                  <SidebarMenuItem key={operation.id}>
+                    <SidebarMenuButton
+                      onClick={() => onOperationSelect(operation.id)}
+                      data-active={selectedOperation === operation.id}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{operation.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
+
       <SidebarFooter>
         <div className="flex flex-col gap-2 p-2">
           {account ? (

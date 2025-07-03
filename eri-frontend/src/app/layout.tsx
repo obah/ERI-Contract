@@ -1,6 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ReactNode } from "react";
+import { headers } from "next/headers";
+import AppkitProvider from "@/context/AppkitProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,13 +24,16 @@ interface RootLayoutProps {
   children: ReactNode;
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default async function RootLayout({ children }: RootLayoutProps) {
+  const headersList = await headers();
+  const cookies = headersList.get("cookie");
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <AppkitProvider cookies={cookies}>{children}</AppkitProvider>
       </body>
     </html>
   );
