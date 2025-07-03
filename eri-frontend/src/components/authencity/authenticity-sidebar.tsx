@@ -4,19 +4,13 @@ import React, { useState } from "react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
-  SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import {
   Select,
@@ -25,32 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import {
-  Building2,
-  FileText,
-  Search,
-  Shield,
-  QrCode,
-  UserCheck,
-  Settings,
-  ChevronRight,
-} from "lucide-react";
+import { Building2, FileText, Search, Shield, UserCheck } from "lucide-react";
 
 type UserType = "manufacturer" | "regular";
 
 interface AuthenticitySidebarProps {
   onOperationSelect: (operation: string) => void;
   selectedOperation: string;
-  account: string | null;
-  onConnectWallet: () => void;
 }
 
 export default function AuthenticitySidebar({
   onOperationSelect,
   selectedOperation,
-  account,
-  onConnectWallet,
 }: AuthenticitySidebarProps) {
   const [userType, setUserType] = useState<UserType>("regular");
 
@@ -114,68 +94,55 @@ export default function AuthenticitySidebar({
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarInset>
-          <SidebarGroup>
-            <SidebarGroupLabel>User Type</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <div className="px-2 py-2">
-                <Select
-                  value={userType}
-                  onValueChange={(value: UserType) => setUserType(value)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select user type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="regular">Regular User</SelectItem>
-                    <SelectItem value="manufacturer">Manufacturer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
 
-          <SidebarGroup>
-            <SidebarGroupLabel>
-              {userType === "manufacturer"
-                ? "Manufacturer Operations"
-                : "Certificate Operations"}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {currentOperations.map((operation) => {
-                  const Icon = operation.icon;
-                  return (
-                    <SidebarMenuItem key={operation.id}>
-                      <SidebarMenuButton
-                        onClick={() => onOperationSelect(operation.id)}
-                        data-active={selectedOperation === operation.id}
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span>{operation.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarInset>
-      </SidebarContent>
-      <SidebarFooter>
-        <div className="flex flex-col gap-2 p-2">
-          {account ? (
-            <div className="text-xs text-muted-foreground px-2">
-              Connected: {account.slice(0, 6)}...{account.slice(-4)}
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>User Type</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="px-2 py-2">
+              <Select
+                value={userType}
+                onValueChange={(value: UserType) => setUserType(value)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select user type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="regular">Regular User</SelectItem>
+                  <SelectItem value="manufacturer">Manufacturer</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          ) : (
-            <Button onClick={onConnectWallet} className="w-full">
-              Connect Wallet
-            </Button>
-          )}
-        </div>
-      </SidebarFooter>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>
+            {userType === "manufacturer"
+              ? "Manufacturer Operations"
+              : "Certificate Operations"}
+          </SidebarGroupLabel>
+
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {currentOperations.map((operation) => {
+                const Icon = operation.icon;
+                return (
+                  <SidebarMenuItem key={operation.id}>
+                    <SidebarMenuButton
+                      onClick={() => onOperationSelect(operation.id)}
+                      data-active={selectedOperation === operation.id}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{operation.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
     </Sidebar>
   );
 }

@@ -2,12 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import axios from "axios";
 import { signTypedData } from "../../lib/resources/typedData";
 import { parseError } from "../../lib/resources/error";
-import { QRCodeCanvas } from "qrcode.react";
 import { AUTHENTICITY_ABI } from "../../lib/resources/authenticity_abi";
-import AuthenticitySidebar from "./authenticity-sidebar";
 import AuthenticityOperations from "./authenticity-operations";
 import {
   Card,
@@ -17,24 +14,28 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarInset,
-} from "@/components/ui/sidebar";
+
 import { toast } from "sonner";
+import { useAppKitAccount } from "@reown/appkit/react";
 
 // Use environment variable or fallback to deployed contract address
 const AUTHENTICITY =
   process.env.NEXT_PUBLIC_AUTHENTICITY ||
   "0x98BC72046616b528D4Bc5bbcC7d99f82237A8B55";
 
-function AuthenticityFeatures() {
-  const [provider, setProvider] = useState<any>(null);
-  const [signer, setSigner] = useState<any>(null);
-  const [account, setAccount] = useState<string | null>(null);
+interface AuthenticityFeaturesProps {
+  selectedOperation: string;
+  setSelectedOperation: (operation: string) => void;
+}
+
+export default function AuthenticityFeatures({
+  selectedOperation,
+  setSelectedOperation,
+}: AuthenticityFeaturesProps) {
   const [rContract, setRContract] = useState<any>(null);
   const [sContract, setSContract] = useState<any>(null);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [loading, setLoading] = useState(false);
   const [formVisible, setFormVisible] = useState<string>("");
   const [manufacturerName, setManufacturerName] = useState<string>("");
   const [queryName, setQueryName] = useState<string>("");
@@ -55,12 +56,11 @@ function AuthenticityFeatures() {
     owner: "0xF2E7E2f51D7C9eEa9B0313C2eCa12f8e43bd1855",
     metadata: "BLACK, 128GB",
   });
-  const [selectedOperation, setSelectedOperation] = useState<string>("");
   const [userType, setUserType] = useState<"manufacturer" | "regular">(
     "regular"
   );
-  const [certificates, setCertificates] = useState<Certificate[]>([]);
-  const [loading, setLoading] = useState(false);
+
+  const { address } = useAppKitAccount();
 
   useEffect(() => {
     if (
@@ -73,34 +73,40 @@ function AuthenticityFeatures() {
       );
       return;
     }
-    if (typeof window.ethereum !== "undefined") {
-      const web3Provider = new ethers.BrowserProvider(window.ethereum);
-      setProvider(web3Provider);
-      setRContract(
-        new ethers.Contract(AUTHENTICITY, AUTHENTICITY_ABI, web3Provider)
-      );
+    const provider = ethers.getDefaultProvider();
+    setRContract(new ethers.Contract(AUTHENTICITY, AUTHENTICITY_ABI, provider));
+    if (address) {
+      if (typeof window !== "undefined" && (window as any).ethereum) {
+        const browserProvider = new ethers.BrowserProvider(
+          (window as any).ethereum
+        );
+        browserProvider.getSigner().then((signer) => {
+          setSContract(
+            new ethers.Contract(AUTHENTICITY, AUTHENTICITY_ABI, signer)
+          );
+        });
+      } else {
+        setSContract(null);
+      }
     } else {
-      setProvider(ethers.getDefaultProvider as any);
-      toast.error("Please install MetaMask!");
+      setSContract(null);
     }
-  }, []);
+  }, [address]);
 
   // Fetch certificates for the connected account
   useEffect(() => {
     const fetchCertificates = async () => {
-      if (!account || !rContract) return;
+      if (!address || !rContract) return;
       setLoading(true);
       try {
         // Replace with actual contract call to fetch certificates for the user
-        // Example: const items = await rContract.getCertificates(account);
-        // For now, use a mock list
         const items = [
           {
             name: "iPhone 12",
             uniqueId: "IMEI123",
             serial: "123456",
             date: "1712345678",
-            owner: account,
+            owner: address,
             metadata: "BLACK, 128GB",
           },
         ];
@@ -112,54 +118,11 @@ function AuthenticityFeatures() {
       }
     };
     fetchCertificates();
-  }, [account, rContract]);
-
-  const connectWallet = async () => {
-    if (!provider) {
-      toast.error("MetaMask not detected");
-      return;
-    }
-    try {
-      if (!account) {
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const signer = await provider.getSigner();
-        const network = await provider.getNetwork();
-        setChainId(network.chainId.toString());
-        const address = await signer.getAddress();
-        setSigner(signer);
-        setAccount(address);
-        setSContract(
-          new ethers.Contract(AUTHENTICITY, AUTHENTICITY_ABI, signer)
-        );
-        toast.success(
-          `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`
-        );
-        return;
-      }
-      setSigner(null);
-      setAccount(null);
-      const network = await provider.getNetwork();
-      setChainId(network.chainId.toString());
-      setRContract(
-        new ethers.Contract(AUTHENTICITY, AUTHENTICITY_ABI, provider)
-      );
-      toast.success("Wallet disconnected");
-    } catch (error: any) {
-      toast.error(`Error: ${error.message}`);
-    }
-  };
-
-  const checkConnection = () => {
-    if (!account) {
-      toast.error("Connect wallet!");
-      return false;
-    }
-    return true;
-  };
+  }, [address, rContract]);
 
   const registerManufacturer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkConnection() || !sContract) return;
+    if (!sContract) return;
     try {
       if (!manufacturerName) throw new Error("Manufacturer name required");
       const tx = await sContract.manufacturerRegisters(manufacturerName);
@@ -174,7 +137,7 @@ function AuthenticityFeatures() {
 
   const getManufacturerByName = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkConnection() || !rContract) return;
+    if (!rContract) return;
     try {
       if (!queryName) throw new Error("Manufacturer name required");
       const address = await rContract.getManufacturerByName(queryName);
@@ -187,7 +150,7 @@ function AuthenticityFeatures() {
 
   const getManufacturer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkConnection() || !rContract) return;
+    if (!rContract) return;
     try {
       if (!queryAddress) throw new Error("Valid address required");
       const result = await rContract.getManufacturer(queryAddress);
@@ -202,7 +165,7 @@ function AuthenticityFeatures() {
 
   const verifySignature = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkConnection() || !sContract || !signer) return;
+    if (!sContract || !address) return;
     try {
       if (
         !certificate.name ||
@@ -219,14 +182,14 @@ function AuthenticityFeatures() {
         uniqueId: certificate.uniqueId,
         serial: certificate.serial,
         date: parseInt(certificate.date),
-        owner: account!,
+        owner: address!,
         metadataHash: ethers.keccak256(
           ethers.AbiCoder.defaultAbiCoder().encode(["string[]"], [metadata])
         ),
         metadata: metadata,
       };
       const { domain, types, value } = signTypedData(cert, chainId);
-      const inSign = await signer.signTypedData(domain, types, value);
+      const inSign = await sContract.signTypedData(domain, types, value);
       const recoveredAddress = ethers.verifyTypedData(
         domain,
         types,
@@ -252,7 +215,7 @@ function AuthenticityFeatures() {
 
   const userClaimOwnership = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkConnection() || !sContract) return;
+    if (!sContract) return;
     try {
       const metadata = createMetadata(certificate.metadata);
       const cert: CertificateWithHash = {
@@ -285,7 +248,7 @@ function AuthenticityFeatures() {
 
   const verifyProductAuthenticity = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkConnection() || !rContract) return;
+    if (!rContract) return;
     try {
       const metadata = createMetadata(certificate.metadata);
       const cert: CertificateWithHash = {
@@ -349,80 +312,58 @@ function AuthenticityFeatures() {
   };
 
   return (
-    <SidebarProvider>
-      <div className="flex h-screen bg-gradient-to-br from-blue-100 to-teal-100">
-        <Sidebar>
-          <AuthenticitySidebar
-            onOperationSelect={handleOperationSelect}
+    <main className="flex-1 p-8 overflow-auto">
+      {selectedOperation ? (
+        <>
+          <Button
+            variant="outline"
+            onClick={() => setSelectedOperation("")}
+            className="mb-4"
+          >
+            ← Back to List
+          </Button>
+          <AuthenticityOperations
             selectedOperation={selectedOperation}
-            account={account}
-            onConnectWallet={connectWallet}
+            account={address}
+            rContract={rContract}
+            sContract={sContract}
           />
-        </Sidebar>
-        <SidebarInset>
-          <main className="flex-1 p-8 overflow-auto">
-            {selectedOperation ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleBackToList}
-                  className="mb-4"
-                >
-                  ← Back to List
-                </Button>
-                <AuthenticityOperations
-                  selectedOperation={selectedOperation}
-                  userType={userType}
-                  account={account}
-                  provider={provider}
-                  signer={signer}
-                  rContract={rContract}
-                  sContract={sContract}
-                  chainId={chainId}
-                />
-              </>
-            ) : (
-              <div>
-                <h2 className="text-2xl font-bold mb-6">Your Certificates</h2>
-                {loading ? (
-                  <div>Loading certificates...</div>
-                ) : certificates.length === 0 ? (
-                  <div>No certificates found.</div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {certificates.map((cert, idx) => (
-                      <Card key={idx}>
-                        <CardHeader>
-                          <CardTitle>{cert.name}</CardTitle>
-                          <CardDescription>
-                            Serial: {cert.serial}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-sm text-muted-foreground mb-2">
-                            Unique ID: {cert.uniqueId}
-                          </div>
-                          <div className="text-sm text-muted-foreground mb-2">
-                            Owner: {cert.owner}
-                          </div>
-                          <div className="text-sm text-muted-foreground mb-2">
-                            Date: {cert.date}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Metadata: {cert.metadata}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+        </>
+      ) : (
+        <div>
+          <h2 className="text-2xl font-bold mb-6">Your Certificates</h2>
+          {loading ? (
+            <p>Loading certificates...</p>
+          ) : certificates.length === 0 ? (
+            <p>No certificates found.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {certificates.map((cert, idx) => (
+                <Card key={idx}>
+                  <CardHeader>
+                    <CardTitle>{cert.name}</CardTitle>
+                    <CardDescription>Serial: {cert.serial}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Unique ID: {cert.uniqueId}
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Owner: {cert.owner}
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Date: {cert.date}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Metadata: {cert.metadata}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </main>
   );
 }
-
-export default AuthenticityFeatures;

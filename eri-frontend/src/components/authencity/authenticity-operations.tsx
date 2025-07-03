@@ -32,24 +32,16 @@ const AUTHENTICITY =
 
 interface AuthenticityOperationsProps {
   selectedOperation: string;
-  userType: "manufacturer" | "regular";
   account: string | null;
-  provider: any;
-  signer: any;
   rContract: any;
   sContract: any;
-  chainId: string;
 }
 
 export default function AuthenticityOperations({
   selectedOperation,
-  userType,
   account,
-  provider,
-  signer,
   rContract,
   sContract,
-  chainId,
 }: AuthenticityOperationsProps) {
   const [manufacturerName, setManufacturerName] = useState<string>("");
   const [queryName, setQueryName] = useState<string>("");
@@ -70,17 +62,9 @@ export default function AuthenticityOperations({
     metadata: "BLACK, 128GB",
   });
 
-  const checkConnection = () => {
-    if (!account) {
-      toast.error("Connect wallet!");
-      return false;
-    }
-    return true;
-  };
-
   const registerManufacturer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkConnection() || !sContract) return;
+    if (!account || !sContract) return;
     try {
       if (!manufacturerName) throw new Error("Manufacturer name required");
       const tx = await sContract.manufacturerRegisters(manufacturerName);
@@ -94,7 +78,7 @@ export default function AuthenticityOperations({
 
   const getManufacturerByName = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkConnection() || !rContract) return;
+    if (!account || !rContract) return;
     try {
       if (!queryName) throw new Error("Manufacturer name required");
       const address = await rContract.getManufacturerByName(queryName);
@@ -107,7 +91,7 @@ export default function AuthenticityOperations({
 
   const getManufacturer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkConnection() || !rContract) return;
+    if (!account || !rContract) return;
     try {
       if (!queryAddress) throw new Error("Valid address required");
       const result = await rContract.getManufacturer(queryAddress);
@@ -122,7 +106,7 @@ export default function AuthenticityOperations({
 
   const verifySignature = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkConnection() || !sContract || !signer) return;
+    if (!account || !sContract) return;
     try {
       if (
         !certificate.name ||
@@ -145,24 +129,30 @@ export default function AuthenticityOperations({
         ),
         metadata: metadata,
       };
-      const { domain, types, value } = signTypedData(cert, chainId);
-      const inSign = await signer.signTypedData(domain, types, value);
+      const { domain, types, value } = signTypedData(cert, "1"); // Assuming chainId is "1" for mainnet
+      const inSign = await account.signTypedData(domain, types, value);
       const recoveredAddress = ethers.verifyTypedData(
         domain,
         types,
         value,
         inSign
       );
+
       if (recoveredAddress.toLowerCase() !== cert.owner.toLowerCase()) {
         throw new Error(
           "Frontend verification failed: Signer does not match owner"
         );
       }
+
       toast.info("Frontend signature verification passed");
+
       const isValid = await rContract.verifySignature(cert, inSign);
+
       setSignatureResult(`Signature valid: ${isValid}`);
       setSignature(inSign);
+
       const qrData = JSON.stringify({ cert, signature: inSign });
+
       setQrCodeData(qrData);
       toast.success(`Signature verification: ${isValid}`);
     } catch (error: any) {
@@ -172,7 +162,7 @@ export default function AuthenticityOperations({
 
   const userClaimOwnership = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkConnection() || !sContract) return;
+    if (!account || !sContract) return;
     try {
       const metadata = createMetadata(certificate.metadata);
       const cert: CertificateWithHash = {
@@ -204,7 +194,7 @@ export default function AuthenticityOperations({
 
   const verifyProductAuthenticity = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkConnection() || !rContract) return;
+    if (!account || !rContract) return;
     try {
       const metadata = createMetadata(certificate.metadata);
       const cert: CertificateWithHash = {
@@ -765,9 +755,23 @@ export default function AuthenticityOperations({
 
   return (
     <div className="p-6">
-      {userType === "manufacturer"
-        ? renderManufacturerOperations()
-        : renderCertificateOperations()}
+      {account ? (
+        renderManufacturerOperations()
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Connect Wallet</CardTitle>
+            <CardDescription>
+              Please connect your wallet to perform operations.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center text-gray-600">
+              Connect your wallet to access the authenticity operations.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
