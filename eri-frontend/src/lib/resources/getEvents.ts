@@ -1,5 +1,3 @@
-import { ContractEvent } from "../../types";
-
 export function getEvents(
   contract: any,
   receipt: { logs: any[] },

@@ -1,5 +1,3 @@
-import { OwnershipABI } from "../../types";
-
 export const OWNERSHIP_ABI: OwnershipABI[] = [
   {
     inputs: [

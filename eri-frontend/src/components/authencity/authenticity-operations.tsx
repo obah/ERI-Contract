@@ -118,22 +118,37 @@ export default function AuthenticityOperations({
       }
       const metadata = createMetadata(certificate.metadata);
       certificate.date = Math.floor(Date.now() / 1000).toString();
-      const cert: CertificateWithHash = {
+      const certWithHash: CertificateWithHash = {
         name: certificate.name,
         uniqueId: certificate.uniqueId,
         serial: certificate.serial,
-        date: parseInt(certificate.date),
+        date: parseInt(certificate.date.toString()),
         owner: account!,
         metadataHash: ethers.keccak256(
           ethers.AbiCoder.defaultAbiCoder().encode(["string[]"], [metadata])
         ),
         metadata: metadata,
       };
+      const cert: Certificate = {
+        name: certificate.name,
+        uniqueId: certificate.uniqueId,
+        serial: certificate.serial,
+        date: parseInt(certificate.date.toString()),
+        owner: account!,
+        metadata: certificate.metadata, // string
+      };
       const { domain, types, value } = signTypedData(cert, "1"); // Assuming chainId is "1" for mainnet
-      const inSign = await account.signTypedData(domain, types, value);
+      // Get signer from provider
+      const provider = new ethers.BrowserProvider(window.ethereum as any);
+      const signer = await provider.getSigner();
+      const inSign = await signer.signTypedData(
+        domain,
+        types as unknown as Record<string, any[]>,
+        value
+      );
       const recoveredAddress = ethers.verifyTypedData(
         domain,
-        types,
+        types as unknown as Record<string, any[]>,
         value,
         inSign
       );
@@ -146,12 +161,12 @@ export default function AuthenticityOperations({
 
       toast.info("Frontend signature verification passed");
 
-      const isValid = await rContract.verifySignature(cert, inSign);
+      const isValid = await rContract.verifySignature(certWithHash, inSign);
 
       setSignatureResult(`Signature valid: ${isValid}`);
       setSignature(inSign);
 
-      const qrData = JSON.stringify({ cert, signature: inSign });
+      const qrData = JSON.stringify({ cert: certWithHash, signature: inSign });
 
       setQrCodeData(qrData);
       toast.success(`Signature verification: ${isValid}`);
@@ -169,7 +184,7 @@ export default function AuthenticityOperations({
         name: certificate.name,
         uniqueId: certificate.uniqueId,
         serial: certificate.serial,
-        date: parseInt(certificate.date),
+        date: parseInt(certificate.date.toString()),
         owner: certificate.owner,
         metadataHash: ethers.keccak256(
           ethers.AbiCoder.defaultAbiCoder().encode(["string[]"], [metadata])
@@ -201,7 +216,7 @@ export default function AuthenticityOperations({
         name: certificate.name,
         uniqueId: certificate.uniqueId,
         serial: certificate.serial,
-        date: parseInt(certificate.date),
+        date: parseInt(certificate.date.toString()),
         owner: certificate.owner,
         metadataHash: ethers.keccak256(
           ethers.AbiCoder.defaultAbiCoder().encode(["string[]"], [metadata])

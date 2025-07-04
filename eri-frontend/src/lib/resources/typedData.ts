@@ -1,5 +1,3 @@
-import { Certificate, TypedData } from "../../types";
-
 export function signTypedData(
   certificate: Certificate,
   chainId: string | number

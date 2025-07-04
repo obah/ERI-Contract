@@ -1,5 +1,3 @@
-import { AuthenticityABI } from "../../types";
-
 export const AUTHENTICITY_ABI: AuthenticityABI[] = [
   {
     inputs: [
